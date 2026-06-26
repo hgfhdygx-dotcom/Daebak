@@ -1,0 +1,17 @@
+# foreign-qa 의존성
+# 설치: pip install -r requirements.txt  (또는 설치.bat 더블클릭)
+
+# OpenAI 공식 SDK (Responses API + web_search 도구 = 리서치, 본문/SEO 생성)
+openai>=1.78.0
+
+# Gemini 엔진(선택) — 리서치 엔진으로 Gemini를 쓸 때만 필요
+google-genai>=1.0.0
+
+# .env 에서 API 키 읽기
+python-dotenv>=1.0.0
+
+# 웹앱(app.py / 웹사이트.bat)
+streamlit>=1.30.0
+
+# IndexNow 색인 핑 + (선택) 가짜 URL 확인
+requests>=2.31.0

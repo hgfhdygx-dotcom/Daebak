@@ -1,0 +1,14 @@
+# Next.js
+/node_modules
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+/.vercel
+
+# misc
+.DS_Store
+npm-debug.log*

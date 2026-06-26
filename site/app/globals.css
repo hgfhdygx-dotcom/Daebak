@@ -1,0 +1,41 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* ─────────────────────────────────────────────────────────────
+   디자인 토큰 (에디토리얼/매거진 · 흰 배경 · 넉넉한 여백) — Daebak에서 이식.
+   포인트 컬러는 단 하나(Vermilion 단청 #E4502B).
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  --color-bg: #ffffff;
+  --color-surface: #faf9f6;
+  --color-ink: #17150f;
+  --color-ink-muted: #6b665e;
+  --color-line: #e7e3da;
+  --color-accent: #e4502b;
+  --color-accent-ink: #b83d1e;
+
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

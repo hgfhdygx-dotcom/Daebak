@@ -1,0 +1,22 @@
+# ── 비밀·키 (절대 커밋 금지) ──
+.env
+.env.local
+
+# ── 로컬 원장/로그 (개인 데이터) ──
+usage_log.json
+outputs.json
+settings.json
+*.tmp
+
+# ── Python ──
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── Next.js 사이트 (site/) ──
+site/node_modules/
+site/.next/
+site/out/
+site/.vercel/
+npm-debug.log*

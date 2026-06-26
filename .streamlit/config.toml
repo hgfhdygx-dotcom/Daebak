@@ -1,0 +1,17 @@
+# 화면 테마 (겉모습 전용 — 로직과 무관). 밝은 모드 + 인디고 액센트.
+[theme]
+base = "light"
+primaryColor = "#6366f1"
+linkColor    = "#4f46e5"
+backgroundColor          = "#f4f5fb"
+secondaryBackgroundColor = "#ffffff"
+textColor                = "#1a1d27"
+borderColor              = "#e7e9f2"
+font        = "-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif"
+baseRadius       = "0.75rem"
+buttonRadius     = "0.625rem"
+baseFontSize     = 16
+showWidgetBorder = true
+
+[client]
+toolbarMode = "minimal"
