@@ -317,20 +317,6 @@ export function getFeaturedGuide(catSlug: string): Post | null {
   return top;
 }
 
-// 사이트 전체 대표 발행 가이드(홈 Featured) — 활성 카테고리들의 발행글 중 featured→priority→pillar→최신.
-// (이전엔 홈이 최신글 posts[0] 를 썼다 — priority/featured 무시 버그. 이제 대표글을 자동 선택.)
-export function getSiteFeatured(): Post | null {
-  const posts = getAllPosts();
-  if (!posts.length) return null;
-  const score = (p: Post) =>
-    (p.featured ? 1_000_000 : 0) +
-    (typeof p.priority === "number" ? p.priority * 1000 : 0) +
-    (p.questionType === "pillar" ? 100 : 0);
-  return [...posts].sort(
-    (a, b) => score(b) - score(a) || (b.datePublished || "").localeCompare(a.datePublished || ""),
-  )[0];
-}
-
 // 클러스터의 대표 "발행" 질문(R1) — live 카드가 실제 발행 질문을 보여주도록. 발행글 없으면 taxonomy pillar 질문 폴백.
 export function clusterFeaturedQuestion(clusterSlug: string): string {
   const published = getPostsByCluster(clusterSlug);

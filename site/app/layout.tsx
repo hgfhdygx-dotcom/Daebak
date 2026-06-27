@@ -5,6 +5,7 @@ import "./globals.css";
 import CategoriesMenu from "@/components/CategoriesMenu";
 import ClusterIcon from "@/components/ClusterIcon";
 import { getCategoryNav } from "@/lib/posts";
+import { groupByMenu } from "@/lib/presentation";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 
 const spaceGrotesk = Space_Grotesk({
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
 
 function SiteHeader() {
   const nav = getCategoryNav();
+  const navOrdered = groupByMenu(nav).flatMap((g) => g.cats); // 모바일도 데스크탑과 같은 그룹 순서
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-4 px-5 sm:px-6 lg:px-8">
@@ -100,12 +102,12 @@ function SiteHeader() {
               <span aria-hidden>☰</span>
             </summary>
             <div className="absolute right-0 z-50 mt-2 max-h-[72vh] w-64 overflow-auto rounded-2xl border border-line bg-surface p-2 shadow-lg">
-              {nav.map((c) => (
+              {navOrdered.map((c) => (
                 <details key={c.slug} className="border-b border-line/60 last:border-0">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink [&::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
                     <span className="flex items-center gap-2">
-                      <span className="text-accent-ink">
-                        <ClusterIcon kind={c.icon} className="h-4 w-4" />
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-section text-accent-ink">
+                        <ClusterIcon kind={c.icon} className="h-3.5 w-3.5" />
                       </span>
                       {c.title}
                     </span>
@@ -113,12 +115,12 @@ function SiteHeader() {
                       ＋
                     </span>
                   </summary>
-                  <ul className="pb-2 pl-9">
-                    {c.topics.map((t, i) => (
+                  <ul className="pb-2 pl-10">
+                    {c.topics.slice(0, 5).map((t, i) => (
                       <li key={i}>
                         <Link
                           href={t.href}
-                          className="block py-1 text-[0.8rem] text-ink-muted hover:text-accent-ink"
+                          className="block rounded-md py-1.5 text-[0.82rem] text-ink-muted transition-colors hover:text-accent-ink"
                         >
                           {t.label}
                         </Link>

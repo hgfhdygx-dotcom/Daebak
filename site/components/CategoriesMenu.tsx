@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import ClusterIcon from "@/components/ClusterIcon";
+import MegaMenuSection from "@/components/MegaMenuSection";
+import { groupByMenu } from "@/lib/presentation";
 import type { MenuCategory } from "@/lib/posts";
 
 // 데스크탑 Categories 메가메뉴 — hover + focus-within 으로 열림, Escape/외부클릭 닫힘, aria-expanded.
+// 정돈된 3그룹(탐색/여행 · 라이프스타일 · 쇼핑/상품) 레이아웃: 열마다 카테고리 섹션 스택, 그룹 간 얇은 구분선.
 // SSG 안전: 링크는 빌드 때 모두 렌더, JS 는 표시 토글만. 데이터(categories)는 서버에서 props.
 export default function CategoriesMenu({ categories }: { categories: MenuCategory[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const groups = groupByMenu(categories);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -54,34 +56,28 @@ export default function CategoriesMenu({ categories }: { categories: MenuCategor
       <div
         role="menu"
         className={
-          "invisible absolute left-0 top-full z-50 mt-2 w-[640px] max-w-[92vw] translate-y-1 rounded-2xl border border-line bg-surface p-4 opacity-0 shadow-lg transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 " +
+          "invisible absolute left-0 top-full z-50 mt-2 w-[720px] max-w-[94vw] translate-y-1 rounded-2xl border border-line bg-surface p-5 opacity-0 shadow-[0_18px_44px_-22px_rgba(20,20,20,0.28)] transition-all duration-150 ease-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 " +
           (open ? "!visible !translate-y-0 !opacity-100" : "")
         }
       >
-        <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-          {categories.map((c) => (
-            <div key={c.slug}>
-              <Link
-                href={c.href}
-                className="flex items-center gap-2 font-display text-sm font-semibold tracking-tight text-ink transition-colors hover:text-accent-ink"
-              >
-                <span className="text-accent-ink">
-                  <ClusterIcon kind={c.icon} className="h-4 w-4" />
-                </span>
-                {c.title}
-              </Link>
-              <ul className="mt-1.5 space-y-1">
-                {c.topics.map((t, i) => (
-                  <li key={i}>
-                    <Link
-                      href={t.href}
-                      className="block text-[0.8rem] text-ink-muted transition-colors hover:text-accent-ink"
-                    >
-                      {t.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+        <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-7">
+          {groups.map((g, gi) => (
+            <div
+              key={g.id}
+              className={
+                "space-y-5 " +
+                (gi > 0 ? "sm:border-l sm:border-line/60 sm:pl-7" : "")
+              }
+            >
+              {g.cats.map((c) => (
+                <MegaMenuSection
+                  key={c.slug}
+                  title={c.title}
+                  href={c.href}
+                  icon={c.icon}
+                  items={c.topics.slice(0, 5)}
+                />
+              ))}
             </div>
           ))}
         </div>

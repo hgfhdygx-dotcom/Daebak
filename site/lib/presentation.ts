@@ -37,6 +37,29 @@ export const PLACES: { label: string; q: string }[] = [
   { label: "Jeju", q: "Jeju travel" },
 ];
 
+// 메가메뉴 시각 그룹(열) — 콘텐츠가 아니라 '배치 순서'다. 탐색/여행 · 라이프스타일 · 쇼핑/상품 3그룹.
+// 미지정 슬러그(taxonomy 에 새 카테고리 추가 시)는 자동으로 마지막 그룹에 편입(범용·하드코딩 아님).
+export const MENU_GROUPS: { id: string; slugs: string[] }[] = [
+  { id: "explore", slugs: ["travel", "local-places", "korean-rules"] },
+  { id: "lifestyle", slugs: ["food", "k-beauty", "k-fashion"] },
+  { id: "shop", slugs: ["shopping", "products"] },
+];
+
+// 카테고리 배열을 MENU_GROUPS 순서대로 3그룹으로 묶음. 미지정은 마지막 그룹. 비는 그룹은 제외.
+export function groupByMenu<T extends { slug: string }>(cats: T[]): { id: string; cats: T[] }[] {
+  const used = new Set<string>();
+  const groups = MENU_GROUPS.map((g) => {
+    const picked = g.slugs
+      .map((s) => cats.find((c) => c.slug === s))
+      .filter((c): c is T => Boolean(c));
+    picked.forEach((c) => used.add(c.slug));
+    return { id: g.id, cats: picked };
+  });
+  const rest = cats.filter((c) => !used.has(c.slug));
+  if (rest.length && groups.length) groups[groups.length - 1].cats.push(...rest);
+  return groups.filter((g) => g.cats.length);
+}
+
 // "Explore by need" 목적별 — 실제 Travel 클러스터로 매핑(있으면 cluster page, 없으면 q→/search)
 export type NeedItem = { label: string; icon: string; clusterSlug?: string; q?: string };
 export const NEEDS: NeedItem[] = [

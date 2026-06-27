@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getAllPosts, getHomeCategories, getSiteFeatured } from "@/lib/posts";
-import AnswerCard from "@/components/AnswerCard";
+import { getAllPosts, getHomeCategories } from "@/lib/posts";
 import CategoryCard from "@/components/CategoryCard";
 import PopularGuides from "@/components/PopularGuides";
 import ExploreByPlace from "@/components/ExploreByPlace";
@@ -58,8 +57,7 @@ const TRUST = ["Local perspective", "Updated guides", "Cited sources"];
 
 export default function Home() {
   const posts = getAllPosts();
-  const featured = getSiteFeatured(); // 대표글(featured/priority 우선) — 최신글이 아님
-  const popular = posts.filter((p) => p.slug !== featured?.slug).slice(0, 4);
+  const popular = posts.slice(0, 4);
   const homeCats = getHomeCategories();
   const popularNow = posts.slice(0, 4).map((p) => ({
     label: p.question || p.title,
@@ -137,13 +135,6 @@ export default function Home() {
           <MostAsked items={popularNow} title="Popular now" />
         </div>
       </section>
-
-      {/* ── Featured answer (범용 카드: 인텐트 라벨 자동) ── */}
-      {featured ? (
-        <section className="mt-6">
-          <AnswerCard post={featured} variant="featured" />
-        </section>
-      ) : null}
 
       {/* ── Browse by category (hover 시 하위분류 pill) ── */}
       <section id="categories" className="mt-10 scroll-mt-20">
