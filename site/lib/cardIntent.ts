@@ -105,6 +105,30 @@ export function cardIntent(post: Post): string {
   return big ? `${big.toUpperCase()} GUIDE` : "GENERAL GUIDE";
 }
 
+/** 카드 상단 여행 아이콘(ClusterIcon kind) — 데이터만 보고 결정. 주제무관·특정 질문 하드코딩 X.
+   차량(taxi/bus/rail)을 공항보다 먼저 봐서 '공항 리무진 버스'를 비행기로 오인하지 않게. */
+export function cardIcon(post: Post): string {
+  const text = _haystack(post);
+  if (/\btaxi\b|\bcab\b|택시/.test(text)) return "taxi";
+  if (/\bbus\b|limousine|limo|shuttle|버스|리무진/.test(text)) return "bus";
+  if (/arex|ktx|\btrain\b|subway|metro|\brail\b|t-?money|tmoney|all-?stop|지하철|기차/.test(text)) return "subway";
+  if (/\bairport\b|incheon|\bicn\b|flight|plane|terminal|immigration|departure|공항/.test(text)) return "plane";
+  if (/\bsim\b|esim|wi-?fi|\bdata\b|유심/.test(text)) return "sim";
+  if (/hotel|stay|accommodation|neighbo|where to stay|숙소|호텔/.test(text)) return "bed";
+  if (/itinerary|how many days|day trip|jeju|busan|island|일정|제주|부산/.test(text)) return "island";
+  if (/season|weather|packing|when to visit|날씨|계절/.test(text)) return "sun";
+  if (/\bsafe|safety|scam|danger|안전|사기/.test(text)) return "shield";
+  if (/language|phrase|culture|etiquette|언어|문화/.test(text)) return "chat";
+  const intent = cardIntent(post);
+  if (intent === "WHERE TO BUY" || intent === "WHAT TO BUY" || /\bbuy\b|shop|price|cost|fare|won|₩|구매|쇼핑/.test(text))
+    return "card";
+  const cat: Record<string, string> = {
+    travel: "travel", food: "food", "k-beauty": "beauty", "k-fashion": "fashion",
+    shopping: "shopping", "korean-rules": "rules", "local-places": "places", products: "products",
+  };
+  return cat[(post.bigCategorySlug || "").toLowerCase()] || "pin";
+}
+
 // ── 칩 표시 헬퍼(데이터 없으면 가짜 숫자 만들지 않음 — 규칙8) ──
 function _glanceValues(post: Post): string {
   const hl = (post.highlights || []).join(" ");

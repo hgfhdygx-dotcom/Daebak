@@ -2,7 +2,8 @@ import Link from "next/link";
 import Badge from "@/components/Badge";
 import Eyebrow from "@/components/Eyebrow";
 import MapPin from "@/components/MapPin";
-import { cardIntent, numericHighlights, scopeChips, sourceTone } from "@/lib/cardIntent";
+import ClusterIcon from "@/components/ClusterIcon";
+import { cardIcon, cardIntent, numericHighlights, scopeChips, sourceTone } from "@/lib/cardIntent";
 import type { Post } from "@/lib/posts";
 
 function fmtDate(d?: string): string {
@@ -25,6 +26,7 @@ export default function AnswerCard({
   variant?: Variant;
 }) {
   const intent = cardIntent(post);
+  const icon = cardIcon(post);
   const isPillar =
     post.questionType === "pillar" || (!!post.pillarSlug && post.pillarSlug === post.slug);
   const isFaq = post.questionType === "faq";
@@ -42,21 +44,26 @@ export default function AnswerCard({
     <Link
       href={`/answers/${post.slug}`}
       className={
-        "group flex flex-col rounded-[20px] border border-line p-4 transition-all duration-150 hover:border-accent/30 hover:shadow-sm sm:p-5" +
+        "group flex flex-col rounded-[20px] border border-line p-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-sm sm:p-5" +
         (featured ? " bg-surface sm:p-6" : " hover:bg-surface")
       }
     >
+      <div className="flex items-center gap-2">
+        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-section text-accent-ink">
+          <ClusterIcon kind={icon} className="h-4 w-4" />
+        </span>
+        <Eyebrow>{intent}</Eyebrow>
+      </div>
       {post.place ? (
-        <span className="mb-1 inline-flex items-center gap-1 text-[0.7rem] font-medium text-ink-soft">
+        <span className="mt-1.5 inline-flex items-center gap-1 text-[0.7rem] font-medium text-ink-soft">
           <MapPin className="h-3 w-3" />
           {post.place}
         </span>
       ) : null}
-      <Eyebrow>{intent}</Eyebrow>
 
       <h3
         className={
-          "mt-1.5 font-display font-bold leading-snug tracking-tight text-ink transition-colors group-hover:text-accent-ink " +
+          "mt-2 font-display font-bold leading-snug tracking-tight text-ink transition-colors group-hover:text-accent-ink " +
           (featured ? "text-xl sm:text-2xl" : "text-lg font-semibold")
         }
       >
