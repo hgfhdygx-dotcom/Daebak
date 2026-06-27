@@ -6,7 +6,7 @@ import { resolveTopicHref } from "@/lib/posts";
 // "Explore by need" — 목적별 진입(데이터 NEEDS, resolver 링크: 존재 cluster면 cluster page).
 export default function ExploreByNeed() {
   return (
-    <section className="mt-10">
+    <section>
       <h2 className="font-display text-lg font-bold tracking-tight">Plan by what you need</h2>
       <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {NEEDS.map((n) => (

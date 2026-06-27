@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getAllPosts, getHomeCategories } from "@/lib/posts";
+import type { Post } from "@/lib/posts";
 import CategoryCard from "@/components/CategoryCard";
 import PopularGuides from "@/components/PopularGuides";
 import ExploreByPlace from "@/components/ExploreByPlace";
 import ExploreByNeed from "@/components/ExploreByNeed";
-import MostAsked from "@/components/MostAsked";
+import SectionBand from "@/components/SectionBand";
+import SmartThumbnail from "@/components/SmartThumbnail";
 import ClusterIcon from "@/components/ClusterIcon";
 import JsonLd from "@/components/JsonLd";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
@@ -13,23 +15,22 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 const INSTAGRAM = "https://instagram.com/kor_punch_boy";
 
 const INTRO =
-  "Hi — I'm a Korean local, and Daebak is my English guide to Korea for foreigners. " +
-  "Clear answers on travel, food, K-beauty, K-fashion, and shopping — with real prices, " +
-  "times, and trusted sources.";
+  "Clear answers for your first Korea trip — airport routes, subway tips, prices, local guides, " +
+  "and trusted sources, from a local Korean perspective.";
 
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "Daebak — Discover Korea",
+  title: "Daebak — Korea travel, made simple",
   description: INTRO,
-  openGraph: { title: "Daebak — Discover Korea", description: INTRO, type: "website" },
+  openGraph: { title: "Daebak — Korea travel, made simple", description: INTRO, type: "website" },
 };
 
 const websiteLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: SITE_NAME,
-  alternateName: "Daebak — Discover Korea",
+  alternateName: "Daebak — Korea travel guide",
   url: SITE_URL,
   inLanguage: "en",
   description: INTRO,
@@ -50,58 +51,60 @@ const websiteLd = {
 // 검색 예시 칩(4개) — UI 로직 아님, 단순 검색 시드.
 const EXAMPLES = [
   "Incheon Airport to Seoul",
-  "Best Korean sunscreen",
+  "Seoul subway with T-money",
+  "Where to stay in Seoul",
   "What to buy in Korea",
-  "Korean BBQ in Gangnam",
 ];
 const TRUST = ["Local perspective", "Updated guides", "Cited sources"];
+
+// 히어로 우측 여행 비주얼(레지스트리 seoul-skyline → 사진 있으면 사진, 없으면 폴백 일러스트). 데이터 기반.
+const HERO_VISUAL = {
+  slug: "", title: "Seoul skyline and travel", body: "",
+  bigCategory: "Travel", bigCategorySlug: "travel", imageKey: "seoul-skyline",
+} as Post;
 
 export default function Home() {
   const posts = getAllPosts();
   const popular = posts.slice(0, 4);
   const homeCats = getHomeCategories();
-  const popularNow = posts.slice(0, 4).map((p) => ({
-    label: p.question || p.title,
-    href: `/answers/${p.slug}`,
-  }));
 
   return (
-    <div className="mx-auto max-w-[1280px] px-5 pb-8 sm:px-6 lg:px-8">
+    <>
       <JsonLd data={websiteLd} />
 
-      {/* ── Hero: 여행 느낌(soft gradient) + 검색 + Popular now ── */}
-      <section className="relative mt-5 overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-surface via-section to-section px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
-        {/* 부드러운 지도 점 장식(이미지 없이 여행 느낌) */}
+      {/* ── Hero (sky → white gradient) : 검색 우선 + 우측 여행 비주얼 ── */}
+      <SectionBand variant="gradient" className="relative overflow-hidden pt-6 pb-10 sm:pt-9 sm:pb-14">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full opacity-[0.07]"
+          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-[0.06]"
           style={{ backgroundImage: "radial-gradient(currentColor 1.5px, transparent 1.5px)", backgroundSize: "16px 16px", color: "var(--color-accent)" }}
         />
-        <div className="relative grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="relative grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-ink">
               Daebak · plan your Korea trip
             </p>
-            <h1 className="mt-2 max-w-xl font-display text-[clamp(2rem,4vw,2.8rem)] font-bold leading-[1.08] tracking-tight">
-              Your Korea trip, made simple.
+            <h1 className="mt-2 max-w-xl font-display text-[clamp(2.1rem,4.5vw,3rem)] font-bold leading-[1.06] tracking-tight">
+              Korea, made simple.
             </h1>
-            <p className="mt-2.5 max-w-xl text-base leading-relaxed text-ink-muted">
-              Plan your first Korea trip with simple answers, local tips, prices, and trusted sources.
+            <p className="mt-3 max-w-xl text-base leading-relaxed text-ink-muted">
+              Clear answers for your first Korea trip — airport routes, subway tips, prices, local
+              guides, and trusted sources.
             </p>
 
-            <form action="/search" role="search" className="mt-4 max-w-xl">
-              <div className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3.5 py-3 shadow-sm focus-within:border-accent">
+            <form action="/search" role="search" className="mt-5 max-w-xl">
+              <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 py-3 shadow-card focus-within:border-accent">
                 <span aria-hidden className="text-base text-ink-muted">🔍</span>
                 <input
                   name="q"
                   type="search"
-                  placeholder="Ask about Korea travel, food, shopping, or beauty…"
+                  placeholder="Ask about Korea travel, food, shopping, or local places…"
                   aria-label="Ask about Korea"
                   className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-muted"
                 />
                 <button
                   type="submit"
-                  className="shrink-0 rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  className="shrink-0 rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
                 >
                   Search
                 </button>
@@ -113,7 +116,7 @@ export default function Home() {
                 <Link
                   key={e}
                   href={`/search?q=${encodeURIComponent(e)}`}
-                  className="rounded-full border border-line bg-surface/80 px-3 py-1 text-[0.8rem] text-ink-muted transition-colors hover:border-accent hover:text-accent-ink"
+                  className="rounded-full border border-line bg-surface px-3 py-1 text-[0.8rem] text-ink-muted transition-colors hover:border-accent hover:text-accent-ink"
                 >
                   {e}
                 </Link>
@@ -131,77 +134,90 @@ export default function Home() {
                 </span>
               ))}
             </div>
-
-            {/* 작은 여행 모티프(공항→서울→숙소) — 큰 이미지 없이 장소감만. 색은 토큰(faint). */}
-            <div aria-hidden className="mt-4 flex items-center gap-1.5 text-ink-soft">
-              <ClusterIcon kind="plane" className="h-3.5 w-3.5" />
-              <span className="h-px w-4 border-t border-dashed border-line" />
-              <ClusterIcon kind="subway" className="h-3.5 w-3.5" />
-              <span className="h-px w-4 border-t border-dashed border-line" />
-              <ClusterIcon kind="bed" className="h-3.5 w-3.5" />
-              <span className="ml-1.5 text-[0.7rem] font-medium">Airport → Seoul → stay</span>
-            </div>
           </div>
 
-          <MostAsked items={popularNow} title="Popular now" />
+          {/* 우측 여행 비주얼 카드 + 설명 오버레이 — 모바일은 숨겨 검색 우선, 데스크탑만 표시 */}
+          <div className="group relative hidden lg:block">
+            <SmartThumbnail
+              post={HERO_VISUAL}
+              aspect="4/3"
+              priority
+              className="rounded-3xl border border-line shadow-card"
+            />
+            <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center gap-1.5 rounded-xl bg-surface/85 px-3 py-2 text-[0.72rem] font-medium text-ink-muted backdrop-blur">
+              <ClusterIcon kind="plane" className="h-3.5 w-3.5 text-accent-ink" />
+              Airport → Seoul → neighborhoods → stay
+            </div>
+          </div>
         </div>
-      </section>
+      </SectionBand>
 
-      {/* ── Browse by category (hover 시 하위분류 pill) ── */}
-      <section id="categories" className="mt-10 scroll-mt-20">
-        <h2 className="font-display text-lg font-bold tracking-tight">Browse Korea travel topics</h2>
-        <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-          {homeCats.map((c) => (
-            <CategoryCard key={c.slug} cat={c} />
-          ))}
+      {/* ── First things travelers ask (white) ── */}
+      <SectionBand variant="white" className="py-10">
+        <PopularGuides posts={popular} />
+      </SectionBand>
+
+      {/* ── Browse Korea travel topics (sky) ── */}
+      <SectionBand variant="sky" className="py-10" id="categories">
+        <div className="scroll-mt-20">
+          <h2 className="font-display text-lg font-bold tracking-tight">Browse Korea travel topics</h2>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {homeCats.map((c) => (
+              <CategoryCard key={c.slug} cat={c} />
+            ))}
+          </div>
         </div>
-      </section>
+      </SectionBand>
 
-      {/* ── Popular local guides ── */}
-      <PopularGuides posts={popular} />
+      {/* ── Explore Korea by neighborhood (white) ── */}
+      <SectionBand variant="white" className="py-10">
+        <ExploreByPlace />
+      </SectionBand>
 
-      {/* ── Explore by place / by need ── */}
-      <ExploreByPlace />
-      <ExploreByNeed />
+      {/* ── Plan by what you need (sky) ── */}
+      <SectionBand variant="sky" className="py-10">
+        <ExploreByNeed />
+      </SectionBand>
 
-      {/* ── Product teaser + For Brands (하단·부드럽게) ── */}
-      <section id="for-brands" className="mt-10 grid scroll-mt-20 gap-4 lg:grid-cols-2">
-        <div className="flex flex-col rounded-2xl border border-line bg-section p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">
-            Korean product guides
-          </p>
-          <h3 className="mt-1.5 font-display text-lg font-bold tracking-tight">
-            What to actually buy in Korea.
-          </h3>
-          <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
-            Honest, sourced picks — K-beauty, fashion, snacks, gifts.
-          </p>
-          <Link
-            href="/search?q=what+to+buy+in+Korea"
-            className="mt-3 inline-flex w-fit rounded-full border border-accent px-4 py-1.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent hover:text-white"
-          >
-            Ask what to buy →
-          </Link>
+      {/* ── Product teaser + For Brands (white, 하단) ── */}
+      <SectionBand variant="white" className="py-10" id="for-brands">
+        <div className="grid scroll-mt-20 gap-4 lg:grid-cols-2">
+          <div className="flex flex-col rounded-2xl border border-line bg-section p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">
+              Korean product guides
+            </p>
+            <h3 className="mt-1.5 font-display text-lg font-bold tracking-tight">
+              What to actually buy in Korea.
+            </h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
+              Honest, sourced picks — K-beauty, fashion, snacks, gifts.
+            </p>
+            <Link
+              href="/search?q=what+to+buy+in+Korea"
+              className="mt-3 inline-flex w-fit rounded-full border border-accent px-4 py-1.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent hover:text-white"
+            >
+              Ask what to buy →
+            </Link>
+          </div>
+
+          <div className="flex flex-col rounded-2xl border border-line bg-surface p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">
+              Ask · or list your brand
+            </p>
+            <h3 className="mt-1.5 font-display text-lg font-bold tracking-tight">
+              A question, or a Korean brand to share?
+            </h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
+              Got a question, or a Korean brand to put in front of foreigners? Just DM me.
+            </p>
+            <a href={INSTAGRAM} target="_blank" rel="noreferrer" className="mt-auto inline-flex w-fit pt-3">
+              <span className="inline-flex rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover">
+                Message on Instagram
+              </span>
+            </a>
+          </div>
         </div>
-
-        {/* For Brands — 보조 CTA(부드러운 톤) */}
-        <div className="flex flex-col rounded-2xl border border-line bg-surface p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">
-            Ask · or list your brand
-          </p>
-          <h3 className="mt-1.5 font-display text-lg font-bold tracking-tight">
-            A question, or a Korean brand to share?
-          </h3>
-          <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
-            Got a question, or a Korean brand to put in front of foreigners? Just DM me.
-          </p>
-          <a href={INSTAGRAM} target="_blank" rel="noreferrer" className="mt-auto inline-flex w-fit pt-3">
-            <span className="inline-flex rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90">
-              Message on Instagram
-            </span>
-          </a>
-        </div>
-      </section>
-    </div>
+      </SectionBand>
+    </>
   );
 }

@@ -2,8 +2,8 @@ import Link from "next/link";
 import Badge from "@/components/Badge";
 import Eyebrow from "@/components/Eyebrow";
 import MapPin from "@/components/MapPin";
-import ClusterIcon from "@/components/ClusterIcon";
-import { cardIcon, cardIntent, numericHighlights, scopeChips, sourceTone } from "@/lib/cardIntent";
+import SmartThumbnail from "@/components/SmartThumbnail";
+import { cardIntent, numericHighlights, scopeChips, sourceTone } from "@/lib/cardIntent";
 import type { Post } from "@/lib/posts";
 
 function fmtDate(d?: string): string {
@@ -16,8 +16,8 @@ function fmtDate(d?: string): string {
 
 type Variant = "featured" | "grid" | "list";
 
-// 범용 답변 카드 — 상단에 데이터 기반 인텐트 라벨(cardIntent), 역할(pillar/supporting/faq)에 따라 메타가
-// 달라짐. 개요(pillar)·FAQ 는 특정 숫자 배지 안 붙임(규칙4/6). 데이터 없는 칩은 숨김(규칙8).
+// 여행 가이드 카드 — 상단 문맥 썸네일(사진 or 폴백 일러스트) + answer-first 메타(인텐트 라벨·가격/시간 칩·Updated·Sources).
+// 색은 전역 토큰만(흰 카드 + 블루 그림자 + pale blue 칩). 새 글이 들어와도 동일 적용·이미지 없어도 안 깨짐.
 export default function AnswerCard({
   post,
   variant = "grid",
@@ -26,14 +26,13 @@ export default function AnswerCard({
   variant?: Variant;
 }) {
   const intent = cardIntent(post);
-  const icon = cardIcon(post);
   const isPillar =
     post.questionType === "pillar" || (!!post.pillarSlug && post.pillarSlug === post.slug);
   const isFaq = post.questionType === "faq";
   const featured = variant === "featured";
   const updated = post.dateModified || post.datePublished || post.lastUpdatedLabel;
   const src = sourceTone(post);
-  // supporting=숫자 배지 / pillar=범위 칩(단일 숫자 금지) / faq=배지 없음
+  // supporting=숫자 칩 / pillar=범위 칩(단일 숫자 금지) / faq=칩 없음
   const numBadges = isPillar
     ? scopeChips(post, 2)
     : !isFaq
@@ -43,67 +42,64 @@ export default function AnswerCard({
   return (
     <Link
       href={`/answers/${post.slug}`}
-      className={
-        "group flex flex-col rounded-[20px] border border-line p-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-sm sm:p-5" +
-        (featured ? " bg-surface sm:p-6" : " hover:bg-surface")
-      }
+      className="group flex flex-col overflow-hidden rounded-[20px] border border-line bg-surface shadow-card transition-all duration-150 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-card-hover"
     >
-      <div className="flex items-center gap-2">
-        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-section text-accent-ink">
-          <ClusterIcon kind={icon} className="h-4 w-4" />
-        </span>
+      <SmartThumbnail post={post} aspect={featured ? "16/9" : "16/9"} priority={featured} />
+
+      <div className={"flex flex-1 flex-col " + (featured ? "p-5 sm:p-6" : "p-4 sm:p-5")}>
+        {post.place ? (
+          <span className="mb-1 inline-flex items-center gap-1 text-[0.7rem] font-medium text-ink-soft">
+            <MapPin className="h-3 w-3" />
+            {post.place}
+          </span>
+        ) : null}
         <Eyebrow>{intent}</Eyebrow>
-      </div>
-      {post.place ? (
-        <span className="mt-1.5 inline-flex items-center gap-1 text-[0.7rem] font-medium text-ink-soft">
-          <MapPin className="h-3 w-3" />
-          {post.place}
-        </span>
-      ) : null}
 
-      <h3
-        className={
-          "mt-2 font-display font-bold leading-snug tracking-tight text-ink transition-colors group-hover:text-accent-ink " +
-          (featured ? "text-xl sm:text-2xl" : "text-lg font-semibold")
-        }
-      >
-        {post.question || post.title}
-      </h3>
-
-      {isFaq ? (
-        updated ? (
-          <div className="mt-2 text-xs text-ink-muted">Updated {fmtDate(updated)}</div>
-        ) : null
-      ) : (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {numBadges.map((b, i) => (
-            <Badge key={i}>{b}</Badge>
-          ))}
-          {updated ? <Badge variant="updated">Updated {fmtDate(updated)}</Badge> : null}
-          {src ? <Badge variant={src.tone === "trust" ? "official" : "default"}>{src.text}</Badge> : null}
-        </div>
-      )}
-
-      {post.summary ? (
-        <p
+        <h3
           className={
-            "mt-2.5 flex-1 text-sm leading-relaxed text-ink-muted " +
-            (isFaq ? "line-clamp-1" : "line-clamp-2")
+            "mt-1.5 font-display font-bold leading-snug tracking-tight text-ink transition-colors group-hover:text-accent-ink " +
+            (featured ? "text-xl sm:text-2xl" : "text-lg font-semibold")
           }
         >
-          {post.summary}
-        </p>
-      ) : null}
+          {post.question || post.title}
+        </h3>
 
-      <span
-        className={
-          featured
-            ? "mt-3 inline-flex w-fit rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white"
-            : "mt-4 inline-flex items-center text-sm font-semibold text-link transition-colors group-hover:text-accent"
-        }
-      >
-        Read answer →
-      </span>
+        {isFaq ? (
+          updated ? (
+            <div className="mt-2 text-xs text-ink-muted">Updated {fmtDate(updated)}</div>
+          ) : null
+        ) : (
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            {numBadges.map((b, i) => (
+              <Badge key={i}>{b}</Badge>
+            ))}
+            {updated ? <Badge variant="updated">Updated {fmtDate(updated)}</Badge> : null}
+            {src ? <Badge variant={src.tone === "trust" ? "official" : "default"}>{src.text}</Badge> : null}
+          </div>
+        )}
+
+        {post.summary ? (
+          <p
+            className={
+              "mt-2.5 flex-1 text-sm leading-relaxed text-ink-muted " +
+              (isFaq ? "line-clamp-1" : "line-clamp-2")
+            }
+          >
+            {post.summary}
+          </p>
+        ) : null}
+
+        <span
+          className={
+            featured
+              ? "mt-4 inline-flex w-fit rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+              : "mt-4 inline-flex items-center gap-1 text-sm font-semibold text-link transition-all group-hover:text-accent"
+          }
+        >
+          Read answer
+          <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
+        </span>
+      </div>
     </Link>
   );
 }

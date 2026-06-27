@@ -57,6 +57,7 @@ export type PostMeta = {
   // 여행 블로그 감성 선택 필드(있으면 카드 상단에 작게 — 색은 토큰이 결정, 없으면 미표시·fallback 깨짐 없음)
   place?: string;            // 장소감 (예: "Myeongdong")
   travelMoment?: string;     // 짧은 여행 모먼트 라벨
+  imageKey?: string;         // 이미지 레지스트리 키(없으면 문맥으로 자동 선택; URL 직접 저장 금지)
 };
 
 export type Post = PostMeta & { body: string };

@@ -7,28 +7,39 @@
    표는 중립(헤더만 아주 연한 회색). 이 토큰이 모든 글·카테고리·제품 페이지에 적용됨.
    ───────────────────────────────────────────────────────────── */
 @theme {
-  --color-bg: #fffcf7;          /* 페이지: 따뜻한 아이보리(누렇지 않게) */
+  --color-bg: #f4f9ff;          /* 페이지: 아주 옅은 sky-white */
   --color-surface: #ffffff;     /* 카드: 깨끗한 흰색 */
-  --color-section: #faf6ef;     /* 섹션/hero 밴드: 아주 연한 크림 */
-  --color-th: #f4f0ea;          /* 표 헤더: 따뜻한 중립 베이지 */
-  --color-ink: #151515;         /* 본문: 선명한 near-black */
-  --color-ink-muted: #6f675f;   /* meta·summary: 따뜻한 회색(너무 연하지 않게) */
-  --color-line: #e7ded2;        /* 보더: 따뜻한 베이지 */
-  --color-accent: #e8483c;      /* 포인트 코랄레드 — 버튼·링크·CTA·소량 (로고 빨강) */
-  --color-accent-hover: #d83a30;/* 코랄 hover(살짝 진하게) */
-  --color-accent-ink: #c13320;  /* 코랄 텍스트/대비 */
-  --color-accent-soft: #fdecea; /* 코랄 아주 옅은 배경 — 장식·hover·warning 소량만 */
-  --color-link: #b9362e;        /* 본문/카드 링크(코랄보다 약간 어두운 red-brown) */
-  --color-trust: #2563eb;       /* 신뢰 블루 — 소량 */
-  --color-ink-soft: #9b9288;    /* 더 옅은 보조 텍스트 (muted-2) */
-  /* 정보형 뱃지: 대부분 '중립'. 출처/공식만 아주 옅은 블루. (색이 아니라 정렬·위계로 읽히게) */
-  --color-badge: #f2ede6;       /* 정보 뱃지 배경(따뜻한 연베이지) */
-  --color-badge-ink: #6c6258;   /* 정보 뱃지 글자(따뜻한 gray-brown) */
-  --color-source: #eef3ff;      /* 출처/공식 뱃지 배경(아주 옅은 블루) */
-  --color-source-ink: #3458c9;  /* 출처/공식 뱃지 글자(차분한 블루) */
+  --color-section: #eaf4ff;     /* 섹션/hero 밴드: pale sky */
+  --color-th: #eef5ff;          /* 표 헤더: pale blue */
+  --color-ink: #16263a;         /* 본문: deep navy */
+  --color-ink-muted: #5d6b7a;   /* meta·summary */
+  --color-line: #d9e8f7;        /* soft blue 보더 */
+  --color-accent: #1e8fff;      /* 메인 = bright sky blue (버튼·링크·CTA·hover) */
+  --color-accent-hover: #1677d8;/* 진한 블루 hover */
+  --color-accent-ink: #1668c9;  /* 블루 텍스트/대비 (eyebrow·링크) */
+  --color-accent-soft: #e6f1ff; /* pale blue 배경 (hover·일러스트·소량 강조) */
+  --color-link: #1668c9;        /* 본문/카드 링크(블루) */
+  --color-trust: #1e8fff;       /* 신뢰 블루 */
+  --color-ink-soft: #8a98a8;    /* 더 옅은 보조 텍스트 (muted-2) */
+  /* 브랜드 레드 = 로고/작은 포인트 전용(남발 금지). 메인 강조는 블루다. */
+  --color-brand: #ee3b26;
+  --color-brand-soft: #ffe9e5;
+  /* 정보 칩: pale blue 로 통일. 출처/공식만 조금 더 신뢰감 있는 blue. */
+  --color-badge: #e6f1ff;       /* 정보 칩 배경(pale blue) */
+  --color-badge-ink: #1d66b2;   /* 정보 칩 글자(blue) */
+  --color-source: #eef5ff;      /* 출처/공식 칩 배경 */
+  --color-source-ink: #315fa8;  /* 출처/공식 칩 글자 */
 
   --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* 블루 톤 카드 그림자(전역 단일 소스). @utility = hover/focus 변형 지원. */
+@utility shadow-card {
+  box-shadow: 0 14px 40px rgba(30, 143, 255, 0.10);
+}
+@utility shadow-card-hover {
+  box-shadow: 0 18px 48px rgba(30, 143, 255, 0.16);
 }
 
 :root {
