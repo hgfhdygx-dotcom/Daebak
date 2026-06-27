@@ -91,6 +91,38 @@ export const imageRegistry: Record<string, RegistryImage> = {
     allowedCategories: ["Travel", "Local Places"],
     allowedPageTypes: ["place", "planning", "list", "practical"],
   },
+  "korean-food": {
+    src: "images/travel/korean-food.jpg",
+    alt: "Assorted Korean dishes served on a table",
+    caption: "Korean meals are usually shared, with many side dishes (banchan).",
+    tags: ["food", "korean", "dish", "meal", "bbq", "restaurant", "table", "banchan"],
+    allowedCategories: ["Food"],
+    allowedPageTypes: ["list", "place", "practical", "planning"],
+  },
+  "k-beauty-skincare": {
+    src: "images/travel/k-beauty-skincare.jpg",
+    alt: "Korean skincare and cosmetics products",
+    caption: "K-beauty is known for layered skincare and daily sunscreen.",
+    tags: ["skincare", "cosmetics", "beauty", "makeup", "serum", "sunscreen", "product"],
+    allowedCategories: ["K-Beauty"],
+    allowedPageTypes: ["list", "practical", "planning"],
+  },
+  "k-fashion-store": {
+    src: "images/travel/k-fashion.jpg",
+    alt: "Clothing on racks in a fashion store",
+    caption: "Korean fashion spans streetwear, minimal basics, and trend pieces.",
+    tags: ["fashion", "clothing", "clothes", "store", "apparel", "streetwear", "outfit"],
+    allowedCategories: ["K-Fashion"],
+    allowedPageTypes: ["list", "place", "practical"],
+  },
+  "shopping-bags": {
+    src: "images/travel/shopping.jpg",
+    alt: "Shopping bags and a retail shopping street",
+    caption: "From convenience stores to malls, shopping options are everywhere.",
+    tags: ["shopping", "retail", "store", "bags", "market", "mall", "gift"],
+    allowedCategories: ["Shopping"],
+    allowedPageTypes: ["list", "place", "practical"],
+  },
 };
 
 const _STOP = new Set([

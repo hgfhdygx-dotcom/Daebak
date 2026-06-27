@@ -105,6 +105,10 @@ SITE_URL = ""                             # 배포된 사이트 주소(예: http
 AUTHOR_NAME = "Editorial Team"            # E-E-A-T(작성자) — 웹앱에서 본인 이름으로
 AUTHOR_BIO = "We research practical questions for foreigners living in or visiting Korea, citing primary sources."
 
+# 🖼 이미지 자동 수급(Pexels) — 큰/중간 카테고리 대표 이미지. 무료·상업적·출처표기 불필요.
+# 키는 .env(PEXELS_API_KEY) 또는 웹앱(이미지 화면)에서 저장 → settings.json.
+PEXELS_API_KEY = ""
+
 # IndexNow(색인 가속) — 키는 .env(INDEXNOW_KEY) 또는 사이트키생성.bat 으로.
 INDEXNOW_DRY_RUN = False                  # True면 실제 핑 안 하고 성공한 척(테스트)
 INDEXNOW_ENDPOINTS = [
@@ -135,9 +139,14 @@ def _load_user_settings():
     for k in ("RESEARCH_ENGINE", "OPENAI_MODEL", "SYNTH_MODEL", "SEO_MODEL", "SUBQ_MODEL",
               "MAX_SUBQS", "ECONOMY_MODE", "DAILY_LIMIT", "MONTHLY_LIMIT", "MAX_COST_PER_RUN_KRW",
               "SITE_URL", "SITE_DIR", "SITE_CONTENT_DIR", "AUTHOR_NAME", "AUTHOR_BIO",
-              "INDEXNOW_DRY_RUN"):
+              "INDEXNOW_DRY_RUN", "PEXELS_API_KEY"):
         if k in s and s[k] is not None:
             g[k] = s[k]
 
 
 _load_user_settings()
+
+# .env(PEXELS_API_KEY) 폴백 — settings.json 에 없을 때만.
+if not PEXELS_API_KEY:
+    import os as _os_env
+    PEXELS_API_KEY = _os_env.getenv("PEXELS_API_KEY", "")

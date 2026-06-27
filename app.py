@@ -28,6 +28,7 @@ import run_runner
 import storage
 import taxonomy
 import usage
+import visuals
 
 st.set_page_config(page_title="Daebak 운영 콘솔", page_icon="🛠️", layout="wide")
 ss = st.session_state
@@ -166,12 +167,15 @@ def render_progress():
 
 
 def render_secondary_nav():
-    c1, c2, _ = st.columns([1, 1, 6])
+    c1, c2, c3, _ = st.columns([1, 1, 1, 5])
     if c1.button("📚 라이브러리", key="nav_lib", use_container_width=True):
         ss["view"] = "라이브러리"
         st.rerun()
     if c2.button("⚡ 빠른 발행", key="nav_quick", use_container_width=True):
         ss["view"] = "빠른 발행"
+        st.rerun()
+    if c3.button("🖼 이미지", key="nav_images", use_container_width=True):
+        ss["view"] = "이미지"
         st.rerun()
 
 
@@ -685,6 +689,77 @@ def render_quick():
 
 
 # ══════════════════════════════════════════════════════════════════════════
+#  🖼 이미지 — 카테고리/클러스터 대표 이미지 자동 수급 (Pexels)
+# ══════════════════════════════════════════════════════════════════════════
+def render_images():
+    st.subheader("🖼 이미지 — 카테고리 대표 이미지 자동 수급")
+    next_box("큰 카테고리 + 중간 카테고리 대표 이미지를 Pexels(무료·상업적·출처표기 불필요)에서 "
+             "자동으로 받아 사이트에 저장합니다. 작은 Q&A 카드는 대상이 아니에요(아이콘 표시).")
+
+    has_key = bool(getattr(config, "PEXELS_API_KEY", ""))
+    with st.expander("Pexels API 키  " + ("✅ 입력됨" if has_key else "⚠️ 필요"), expanded=not has_key):
+        st.markdown(
+            "1) **pexels.com/api** 접속 → **Get Started**(가입/로그인, 무료)\n"
+            "2) **Your API Key** 복사 → 아래에 붙여넣고 저장\n\n"
+            "→ 무료 · 상업적 사용 OK · 출처표기 불필요 (시간당 200건).")
+        k = st.text_input("Pexels API Key", value=getattr(config, "PEXELS_API_KEY", ""),
+                          type="password", key="pexels_key_in")
+        if st.button("💾 키 저장", key="save_pexels"):
+            s = storage.safe_load_json(config.SETTINGS_FILE, {}) or {}
+            s["PEXELS_API_KEY"] = (k or "").strip()
+            storage.safe_save_json(config.SETTINGS_FILE, s)
+            config.PEXELS_API_KEY = (k or "").strip()
+            st.success("저장했어요. ✅")
+            st.rerun()
+
+    targets = visuals.list_targets()
+    have = sum(1 for t in targets if t["exists"])
+    st.caption(f"대상 {len(targets)}개 (큰 카테고리 + 중간 카테고리) · "
+               f"이미지 있음 {have} / 없음 {len(targets) - have}")
+    for t in targets:
+        mark = "🟢" if t["exists"] else "⬜"
+        lvl = "큰 카테고리" if t["level"] == "bigCategory" else "중간 카테고리"
+        src = t["src"] or "—(레지스트리에 키 없음)"
+        st.markdown(f"{mark} **{t['key']}** · {lvl} · 사용: {', '.join(t['used_by'])} · `{src}`")
+
+    overwrite = st.checkbox("이미 있는 이미지도 새로 받기(교체)", value=False, key="img_overwrite")
+    if st.button("⬇ 전체 자동 수급", type="primary", disabled=not has_key, key="img_fetch"):
+        with st.spinner("Pexels에서 받는 중…"):
+            ss["img_results"] = visuals.fetch_all(overwrite=overwrite)
+    if not has_key:
+        st.caption("먼저 위에서 Pexels 키를 저장하세요.")
+
+    results = ss.get("img_results")
+    if results:
+        ok = sum(1 for r in results if r["ok"])
+        st.success(f"완료: {ok}/{len(results)} 처리")
+        for r in results:
+            c = st.columns([1, 4])
+            if r["ok"] and r.get("dest_abs"):
+                try:
+                    c[0].image(r["dest_abs"], width=150)
+                except Exception:  # noqa: BLE001
+                    c[0].write("🟢")
+                c[1].markdown(f"**{r['key']}** → `{r['src']}`  \n{r['msg']}")
+            else:
+                c[0].write("⬜")
+                c[1].markdown(f"**{r['key']}** — {r.get('msg', '')}  \n검색어: `{r.get('query', '')}`")
+        st.divider()
+        st.caption("이미지는 site/public 에 저장됩니다. 라이브 사이트에 반영하려면 아래로 올리세요.")
+        if st.button("🚀 GitHub에 올리기(배포)", type="primary", key="img_push"):
+            with st.spinner("커밋·푸시 중…"):
+                push = visuals.push_images(results)
+            if push.get("ok"):
+                st.success("올렸어요. 약 1분 뒤 자동 배포됩니다(그 후 Ctrl+Shift+R). ✅")
+            elif push.get("reason") == "no_files":
+                st.info("올릴 새 이미지가 없어요.")
+            elif push.get("reason") == "not_ready":
+                st.warning("GitHub 토큰/원격 미설정 — `깃토큰입력.bat` 후 다시 시도하세요.")
+            else:
+                st.error("푸시 실패: " + str(push.get("log", push.get("reason", ""))))
+
+
+# ══════════════════════════════════════════════════════════════════════════
 #  메인
 # ══════════════════════════════════════════════════════════════════════════
 st.title("🛠️ Daebak 운영 콘솔")
@@ -694,5 +769,6 @@ render_secondary_nav()
 st.divider()
 
 _VIEW_FN = {"기획·분류": render_plan, "생성·발행": render_generate, "라이브러리": render_library,
-            "측정": render_measure, "갱신 관리": render_update, "빠른 발행": render_quick}
+            "측정": render_measure, "갱신 관리": render_update, "빠른 발행": render_quick,
+            "이미지": render_images}
 _VIEW_FN.get(ss["view"], render_plan)()
