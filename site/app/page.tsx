@@ -69,12 +69,12 @@ export default function Home() {
       <JsonLd data={websiteLd} />
 
       {/* ── Hero: 여행 느낌(soft gradient) + 검색 + Popular now ── */}
-      <section className="relative mt-5 overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-surface via-section to-[#eef3ff] px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
+      <section className="relative mt-5 overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-surface via-surface to-section px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
         {/* 부드러운 지도 점 장식(이미지 없이 여행 느낌) */}
         <div
           aria-hidden
           className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full opacity-[0.07]"
-          style={{ backgroundImage: "radial-gradient(currentColor 1.5px, transparent 1.5px)", backgroundSize: "16px 16px", color: "#2563eb" }}
+          style={{ backgroundImage: "radial-gradient(currentColor 1.5px, transparent 1.5px)", backgroundSize: "16px 16px", color: "var(--color-accent)" }}
         />
         <div className="relative grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div>

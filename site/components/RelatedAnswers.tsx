@@ -1,7 +1,7 @@
-import Link from "next/link";
+import AnswerCard from "@/components/AnswerCard";
 import type { Post } from "@/lib/posts";
 
-// 관련 답변 — 하단 카드(토픽 클러스터 GEO 내부링크 겸용). 카테고리 생기면 그 기준으로 교체 가능.
+// 관련 답변 — 공용 ArticleCard(AnswerCard)로 통일(별도 카드 스타일 금지). 토픽 클러스터 GEO 내부링크 겸용.
 export default function RelatedAnswers({ posts }: { posts: Post[] }) {
   if (posts.length === 0) return null;
   return (
@@ -11,15 +11,7 @@ export default function RelatedAnswers({ posts }: { posts: Post[] }) {
       </h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {posts.map((p) => (
-          <Link
-            key={p.slug}
-            href={`/answers/${p.slug}`}
-            className="group rounded-2xl border border-line p-4 transition-colors hover:bg-surface"
-          >
-            <span className="font-display font-medium leading-snug text-ink transition-colors group-hover:text-accent-ink">
-              {p.question || p.title}
-            </span>
-          </Link>
+          <AnswerCard key={p.slug} post={p} variant="list" />
         ))}
       </div>
     </section>

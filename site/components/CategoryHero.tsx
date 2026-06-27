@@ -21,7 +21,7 @@ export default function CategoryHero({
       <div
         aria-hidden
         className="pointer-events-none absolute -right-8 -top-8 h-44 w-44 rounded-full opacity-[0.08]"
-        style={{ backgroundImage: "radial-gradient(currentColor 1.5px, transparent 1.5px)", backgroundSize: "15px 15px", color: "#2563eb" }}
+        style={{ backgroundImage: "radial-gradient(currentColor 1.5px, transparent 1.5px)", backgroundSize: "15px 15px", color: "var(--color-accent)" }}
       />
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="max-w-2xl">

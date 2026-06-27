@@ -88,6 +88,7 @@ export type BigCategory = {
   heroTitle?: string;
   heroSubtitle?: string;
   navTopics?: NavTopic[];
+  tone?: string;
   clusters: string[];
   status?: string;
 };
@@ -246,6 +247,12 @@ export function categoryHref(cat: BigCategory): string {
   return isActiveCategory(cat.slug) ? `/${cat.slug}` : `/search?q=${encodeURIComponent(cat.title)}`;
 }
 
+// 카테고리 색조(tone) — taxonomy.json 에서 단일 관리(아주 옅은 tint). 없으면 presentation 기본, 그것도 없으면 section.
+// 카테고리 카드/허브 아이콘 배경에만 쓰고, 글(Article) 카드에는 절대 쓰지 않는다.
+export function categoryTone(catSlug: string): string {
+  return getCategory(catSlug)?.tone || CATEGORY_TINT[catSlug] || "#faf6f0";
+}
+
 // ★ 모든 메뉴/칩/pill 링크는 이 resolver 를 통과해야 한다(404 방지):
 //   명시 href → 존재하는 cluster면 /[cat]/[cluster] → q면 /search?q= → label로 /search?q=
 export function resolveTopicHref(t: NavTopic): string {
@@ -350,7 +357,7 @@ export function getHomeCategories(): HomeCategory[] {
     title: cat.title,
     blurb: cat.blurb || cat.description || "",
     icon: cat.icon || CATEGORY_ICON_FALLBACK[cat.slug] || "products",
-    tint: CATEGORY_TINT[cat.slug] || "#faf6f0",
+    tint: cat.tone || CATEGORY_TINT[cat.slug] || "#faf6f0",
     href: categoryHref(cat),
     active: isActiveCategory(cat.slug),
     pills: getNavTopics(cat)

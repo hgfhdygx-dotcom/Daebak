@@ -41,7 +41,7 @@ export default function AnswerCard({
     <Link
       href={`/answers/${post.slug}`}
       className={
-        "group flex flex-col rounded-2xl border border-line p-5 transition-shadow hover:shadow-sm" +
+        "group flex flex-col rounded-2xl border border-line p-4 transition-shadow hover:shadow-sm sm:p-5" +
         (featured ? " bg-surface sm:p-6" : " hover:bg-surface")
       }
     >
@@ -63,12 +63,10 @@ export default function AnswerCard({
       ) : (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {numBadges.map((b, i) => (
-            <Badge key={i} tone="muted">
-              {b}
-            </Badge>
+            <Badge key={i}>{b}</Badge>
           ))}
-          {updated ? <Badge tone="muted">Updated {fmtDate(updated)}</Badge> : null}
-          {src ? <Badge tone={src.tone}>{src.text}</Badge> : null}
+          {updated ? <Badge variant="updated">Updated {fmtDate(updated)}</Badge> : null}
+          {src ? <Badge variant={src.tone === "trust" ? "official" : "default"}>{src.text}</Badge> : null}
         </div>
       )}
 

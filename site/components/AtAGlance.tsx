@@ -7,7 +7,7 @@ export default function AtAGlance({ items }: { items: GlanceItem[] }) {
     <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
       {items.slice(0, 4).map((it, i) => (
         <div key={i} className="rounded-2xl border border-line bg-surface p-3.5">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-accent-ink">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-ink-muted">
             {it.label}
           </p>
           <p className="mt-1 text-sm font-medium leading-snug text-ink">

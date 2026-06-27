@@ -3,8 +3,7 @@ import ClusterIcon from "@/components/ClusterIcon";
 import StatusBadge from "@/components/StatusBadge";
 import { Chip } from "@/components/Chip";
 import { createShortQuestionLabel } from "@/lib/cardIntent";
-import { CATEGORY_TINT } from "@/lib/presentation";
-import type { Cluster } from "@/lib/posts";
+import { categoryTone, type Cluster } from "@/lib/posts";
 
 // "가이드 컬렉션 카드" — 아이콘 버블 + 상태 배지 + 대표 질문(내부 박스) + 자동 질문 pill + CTA.
 // 전부 cluster 데이터에서 생성(특정 질문 하드코딩 X). 질문 pill 은 미발행일 수 있어 시각용(링크 X).
@@ -26,7 +25,7 @@ export default function ClusterCard({
   const pills = (cluster.supportingQuestions ?? [])
     .slice(0, 3)
     .map((q) => createShortQuestionLabel({ question: q.question }));
-  const tint = CATEGORY_TINT[cluster.bigCategory] || "#faf6f0";
+  const tint = categoryTone(cluster.bigCategory);
 
   return (
     <div className="group relative flex flex-col rounded-2xl border border-line bg-surface p-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-sm">

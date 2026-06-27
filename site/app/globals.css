@@ -15,8 +15,17 @@
   --color-ink-muted: #6f675e;   /* meta·캡션 */
   --color-line: #eae4db;        /* 연한 베이지그레이 보더 */
   --color-accent: #e8483c;      /* 포인트 코랄레드 — 버튼·링크·CTA·소량 (로고 빨강과 근접) */
+  --color-accent-hover: #d93c31;/* 코랄 hover */
   --color-accent-ink: #c13320;  /* 코랄 텍스트/대비 */
+  --color-accent-soft: #fdebe8; /* 코랄 아주 옅은 배경 — 장식·warning 뱃지 소량만 */
+  --color-link: #b9342c;        /* 본문 링크(코랄 계열, 가독) */
   --color-trust: #2563eb;       /* 신뢰 블루 — 소량 */
+  --color-ink-soft: #9a9188;    /* 더 옅은 meta (muted-2) */
+  /* 정보형 뱃지: 대부분 '중립'. 출처/공식만 아주 옅은 블루. (색이 아니라 정렬·위계로 읽히게) */
+  --color-badge: #f1ede7;       /* 정보 뱃지 배경(중립) */
+  --color-badge-ink: #6b625a;   /* 정보 뱃지 글자(중립) */
+  --color-source: #eef2ff;      /* 출처/공식 뱃지 배경(옅은 블루) */
+  --color-source-ink: #3156c8;  /* 출처/공식 뱃지 글자 */
 
   --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;

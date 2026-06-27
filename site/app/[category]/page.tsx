@@ -16,8 +16,9 @@ import {
   getFeaturedGuide,
   getNavTopics,
   resolveTopicHref,
+  categoryTone,
 } from "@/lib/posts";
-import { CATEGORY_ICON_FALLBACK, CATEGORY_TINT } from "@/lib/presentation";
+import { CATEGORY_ICON_FALLBACK } from "@/lib/presentation";
 import { buildBreadcrumbLd } from "@/lib/schema";
 import { SITE_URL } from "@/lib/site";
 
@@ -60,7 +61,7 @@ export default async function CategoryPage({
   const stats = categoryStats(cat.slug);
   const topics = getNavTopics(cat).map((t) => ({ label: t.label, href: resolveTopicHref(t) }));
   const featured = getFeaturedGuide(cat.slug);
-  const tint = CATEGORY_TINT[cat.slug] || "#faf6f0";
+  const tint = categoryTone(cat.slug);
   const icon = cat.icon || CATEGORY_ICON_FALLBACK[cat.slug] || "products";
 
   return (
