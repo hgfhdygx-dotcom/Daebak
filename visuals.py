@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import re
 import time
 import urllib.parse
@@ -154,7 +155,8 @@ def fetch_one(target: dict, api_key: str, reg: dict, overwrite: bool = False) ->
     if not photos:
         res["msg"] = f"검색 결과 없음 (query: {query})"
         return res
-    photo = photos[0]
+    # 기본은 가장 관련도 높은 사진(0번). '교체(overwrite)' 재실행이면 상위권에서 다른 걸로 re-roll.
+    photo = random.choice(photos[:8]) if overwrite else photos[0]
     img_url = (photo.get("src") or {}).get("large") or (photo.get("src") or {}).get("medium")
     if not img_url:
         res["msg"] = "이미지 URL 없음"
