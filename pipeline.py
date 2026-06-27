@@ -17,6 +17,7 @@ import classify
 import config
 import dedupe
 import geo_check
+import intent_label
 import linking
 import llm
 import outputs
@@ -193,9 +194,43 @@ def existing_answers(cfg=None) -> list:
     return out
 
 
-def plan_batch(questions: list, cfg=None, persist: bool = True) -> list:
+import re as _re
+
+
+def _qnorm(s: str) -> str:
+    return _re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
+
+
+def parse_labeled_questions(text: str) -> dict:
+    """'PILLAR:' / 'QNA:' 라벨 입력 파싱 → {'pillar': str|None, 'qna': [str], 'all': [str]}.
+    라벨이 없으면 전부 평면(pillar=None, classify 가 pillar 판정)."""
+    lines = [l.strip() for l in (text or "").splitlines() if l.strip()]
+    pillar = None
+    qna: list[str] = []
+    section = None
+    has_label = False
+    for l in lines:
+        low = l.lower().rstrip(":").strip()
+        if low in ("pillar", "대표", "대표 질문", "메인", "main"):
+            section = "pillar"; has_label = True; continue
+        if low in ("qna", "q&a", "qa", "supporting", "보조", "보조 질문", "질문", "questions"):
+            section = "qna"; has_label = True; continue
+        if section == "pillar" and pillar is None:
+            pillar = l
+        elif section == "pillar":
+            qna.append(l)          # PILLAR 섹션의 두 번째부터는 보조로
+        else:
+            qna.append(l)          # qna 섹션 또는 라벨 이전
+    allq = ([pillar] if pillar else []) + qna
+    if not has_label:
+        return {"pillar": None, "qna": lines, "all": lines}
+    return {"pillar": pillar, "qna": qna, "all": allq}
+
+
+def plan_batch(questions: list, cfg=None, persist: bool = True, pillar_question: str | None = None) -> list:
     """질문 묶음 → 자동 분류(taxonomy 닫힌 집합) + 중복감지 → plan 행 목록.
-    persist=True 면 plan.json 에 저장. OpenAI 키 있으면 분류/경계중복 품질↑, 없으면 휴리스틱 폴백."""
+    persist=True 면 plan.json 에 저장. OpenAI 키 있으면 분류/경계중복 품질↑, 없으면 휴리스틱 폴백.
+    pillar_question 이 주어지면 그 질문의 역할을 pillar 로 강제하고 다른 pillar 후보는 supporting 으로 강등."""
     cfg = cfg or config
     qs = [str(q).strip() for q in (questions or []) if str(q).strip()]
     if not qs:
@@ -204,6 +239,14 @@ def plan_batch(questions: list, cfg=None, persist: bool = True) -> list:
     client = llm.make_client("openai", okey) if okey else None
     taxo = taxonomy.load()
     rows = classify.classify_batch(qs, taxo, client, cfg)
+    # 사용자가 지정한 Pillar 역할 강제(분류는 LLM, 역할은 운영자 의도 우선)
+    if pillar_question:
+        pk = _qnorm(pillar_question)
+        for r in rows:
+            if _qnorm(r.get("question", "")) == pk:
+                r["questionType"] = "pillar"
+            elif r.get("questionType") == "pillar":
+                r["questionType"] = "supporting"
     cand = existing_answers(cfg)
     for i, r in enumerate(rows):
         others = [{"slug": x.get("slug"), "question": x.get("question"),
@@ -234,6 +277,41 @@ def reconcile_row(row: dict, cfg=None) -> dict:
     else:
         row["clusterSlug"] = ""
     return row
+
+
+def auto_select_batch(cluster_slug: str, batch_size: int = 5, cfg=None) -> list:
+    """발행 대기 자동 선택(운영자 수동선택 대체). 규칙: published/보류/중복 제외 →
+    Pillar 미발행이면 먼저 → 상태(ready>generated>researched>planned)·우선순위 → 의도 다양성(라운드로빈).
+    반환 plan_id 목록(앞 batch_size 개)."""
+    rows = [r for r in plan.list_plan(cluster_slug=cluster_slug)
+            if r.get("status") in ("planned", "researched", "generated", "ready")
+            and not r.get("dedupeOf")
+            and not any((d or {}).get("is_dup") for d in (r.get("duplicateRisk") or []))]
+    pub = {o.get("slug") for o in outputs.list_outputs() if o.get("status") == "published"}
+    rows = [r for r in rows if r.get("slug") not in pub]
+    if not rows:
+        return []
+    rank = {"ready": 0, "generated": 1, "researched": 2, "planned": 3}
+    rows.sort(key=lambda r: (rank.get(r.get("status"), 9), -int(r.get("priority") or 0), r.get("plan_id", "")))
+    pillars = [r for r in rows if r.get("questionType") == "pillar"]
+    rest = [r for r in rows if r.get("questionType") != "pillar"]
+    # 의도 다양성: 같은 의도 라벨이 몰리지 않게 라운드로빈
+    buckets: dict[str, list] = {}
+    bucket_order: list[str] = []
+    for r in rest:
+        lab = intent_label.label(r.get("intent", ""), r.get("question", ""),
+                                 r.get("pageType", ""), r.get("questionType", ""), r.get("bigCategory", ""))
+        if lab not in buckets:
+            buckets[lab] = []
+            bucket_order.append(lab)
+        buckets[lab].append(r)
+    diverse: list = []
+    while any(buckets[l] for l in bucket_order):
+        for l in bucket_order:
+            if buckets[l]:
+                diverse.append(buckets[l].pop(0))
+    ordered = pillars + diverse
+    return [r["plan_id"] for r in ordered[:max(1, int(batch_size))]]
 
 
 # ══════════════════════════════════════════════════════════════════════════
