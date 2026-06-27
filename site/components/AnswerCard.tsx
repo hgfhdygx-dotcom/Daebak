@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Badge from "@/components/Badge";
 import Eyebrow from "@/components/Eyebrow";
+import MapPin from "@/components/MapPin";
 import { cardIntent, numericHighlights, scopeChips, sourceTone } from "@/lib/cardIntent";
 import type { Post } from "@/lib/posts";
 
@@ -45,6 +46,12 @@ export default function AnswerCard({
         (featured ? " bg-surface sm:p-6" : " hover:bg-surface")
       }
     >
+      {post.place ? (
+        <span className="mb-1 inline-flex items-center gap-1 text-[0.7rem] font-medium text-ink-soft">
+          <MapPin className="h-3 w-3" />
+          {post.place}
+        </span>
+      ) : null}
       <Eyebrow>{intent}</Eyebrow>
 
       <h3

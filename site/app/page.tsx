@@ -6,6 +6,7 @@ import PopularGuides from "@/components/PopularGuides";
 import ExploreByPlace from "@/components/ExploreByPlace";
 import ExploreByNeed from "@/components/ExploreByNeed";
 import MostAsked from "@/components/MostAsked";
+import ClusterIcon from "@/components/ClusterIcon";
 import JsonLd from "@/components/JsonLd";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
@@ -79,13 +80,13 @@ export default function Home() {
         <div className="relative grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-ink">
-              Daebak · Korea, discovered
+              Daebak · plan your Korea trip
             </p>
             <h1 className="mt-2 max-w-xl font-display text-[clamp(2rem,4vw,2.8rem)] font-bold leading-[1.08] tracking-tight">
-              Discover Korea with local answers.
+              Your Korea trip, made simple.
             </h1>
             <p className="mt-2.5 max-w-xl text-base leading-relaxed text-ink-muted">
-              Simple guides for transport, food, beauty, shopping, and places.
+              Plan your first Korea trip with simple answers, local tips, prices, and trusted sources.
             </p>
 
             <form action="/search" role="search" className="mt-4 max-w-xl">
@@ -124,11 +125,21 @@ export default function Home() {
                 <span key={t} className="flex items-center gap-2.5">
                   {i > 0 ? <span aria-hidden className="text-line">·</span> : null}
                   <span className="flex items-center gap-1">
-                    <span aria-hidden className="text-trust">✓</span>
+                    <span aria-hidden className="text-accent-ink">✓</span>
                     {t}
                   </span>
                 </span>
               ))}
+            </div>
+
+            {/* 작은 여행 모티프(공항→서울→숙소) — 큰 이미지 없이 장소감만. 색은 토큰(faint). */}
+            <div aria-hidden className="mt-4 flex items-center gap-1.5 text-ink-soft">
+              <ClusterIcon kind="plane" className="h-3.5 w-3.5" />
+              <span className="h-px w-4 border-t border-dashed border-line" />
+              <ClusterIcon kind="subway" className="h-3.5 w-3.5" />
+              <span className="h-px w-4 border-t border-dashed border-line" />
+              <ClusterIcon kind="bed" className="h-3.5 w-3.5" />
+              <span className="ml-1.5 text-[0.7rem] font-medium">Airport → Seoul → stay</span>
             </div>
           </div>
 
@@ -138,7 +149,7 @@ export default function Home() {
 
       {/* ── Browse by category (hover 시 하위분류 pill) ── */}
       <section id="categories" className="mt-10 scroll-mt-20">
-        <h2 className="font-display text-lg font-bold tracking-tight">Browse Korea by category</h2>
+        <h2 className="font-display text-lg font-bold tracking-tight">Browse Korea travel topics</h2>
         <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
           {homeCats.map((c) => (
             <CategoryCard key={c.slug} cat={c} />

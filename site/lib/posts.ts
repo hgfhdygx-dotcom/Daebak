@@ -54,6 +54,9 @@ export type PostMeta = {
   criteria?: string[];       // Recommendation: 추천 기준
   buyLocations?: string[];   // Buying: 구매처
   productGroups?: string[];  // Buying: 상품군
+  // 여행 블로그 감성 선택 필드(있으면 카드 상단에 작게 — 색은 토큰이 결정, 없으면 미표시·fallback 깨짐 없음)
+  place?: string;            // 장소감 (예: "Myeongdong")
+  travelMoment?: string;     // 짧은 여행 모먼트 라벨
 };
 
 export type Post = PostMeta & { body: string };

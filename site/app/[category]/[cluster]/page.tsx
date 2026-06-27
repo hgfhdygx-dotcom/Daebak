@@ -98,6 +98,9 @@ export default async function ClusterPage({
       {/* 대표 글(Pillar) — 카드가 스스로 인텐트 라벨(MAIN GUIDE 등) 표시 */}
       {pillar ? (
         <section className="mt-7">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">
+            Start here
+          </p>
           <AnswerCard post={pillar} variant="featured" />
         </section>
       ) : null}
@@ -105,7 +108,7 @@ export default async function ClusterPage({
       {/* 발행된 supporting 답변 */}
       {published.length ? (
         <section className="mt-8">
-          <h2 className="font-display text-lg font-bold tracking-tight">Answers</h2>
+          <h2 className="font-display text-lg font-bold tracking-tight">Traveler questions</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {published.map((p) => (
               <AnswerCard key={p.slug} post={p} />

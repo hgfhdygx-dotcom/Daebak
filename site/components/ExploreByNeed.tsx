@@ -7,7 +7,7 @@ import { resolveTopicHref } from "@/lib/posts";
 export default function ExploreByNeed() {
   return (
     <section className="mt-10">
-      <h2 className="font-display text-lg font-bold tracking-tight">Explore by need</h2>
+      <h2 className="font-display text-lg font-bold tracking-tight">Plan by what you need</h2>
       <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {NEEDS.map((n) => (
           <Link

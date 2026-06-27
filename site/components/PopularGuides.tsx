@@ -6,7 +6,7 @@ export default function PopularGuides({ posts }: { posts: Post[] }) {
   if (!posts.length) return null;
   return (
     <section className="mt-10">
-      <h2 className="font-display text-lg font-bold tracking-tight">Popular local guides</h2>
+      <h2 className="font-display text-lg font-bold tracking-tight">First things travelers ask</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {posts.map((p) => (
           <AnswerCard key={p.slug} post={p} variant="list" />

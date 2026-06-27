@@ -34,7 +34,7 @@ export default function CategoryHero({
           ) : null}
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-muted">
             <span>
-              <b className="text-ink">{stats.live}</b> live
+              <b className="text-ink">{stats.live}</b> guides
             </span>
             <span>
               <b className="text-ink">{stats.soon}</b> coming soon
