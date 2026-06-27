@@ -69,7 +69,7 @@ export default function Home() {
       <JsonLd data={websiteLd} />
 
       {/* ── Hero: 여행 느낌(soft gradient) + 검색 + Popular now ── */}
-      <section className="relative mt-5 overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-surface via-surface to-section px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
+      <section className="relative mt-5 overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-surface via-section to-section px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
         {/* 부드러운 지도 점 장식(이미지 없이 여행 느낌) */}
         <div
           aria-hidden

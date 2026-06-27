@@ -41,7 +41,7 @@ export default function AnswerCard({
     <Link
       href={`/answers/${post.slug}`}
       className={
-        "group flex flex-col rounded-2xl border border-line p-4 transition-shadow hover:shadow-sm sm:p-5" +
+        "group flex flex-col rounded-[20px] border border-line p-4 transition-all duration-150 hover:border-accent/30 hover:shadow-sm sm:p-5" +
         (featured ? " bg-surface sm:p-6" : " hover:bg-surface")
       }
     >
@@ -85,7 +85,7 @@ export default function AnswerCard({
         className={
           featured
             ? "mt-3 inline-flex w-fit rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white"
-            : "mt-4 inline-flex items-center text-sm font-semibold text-accent-ink"
+            : "mt-4 inline-flex items-center text-sm font-semibold text-link transition-colors group-hover:text-accent"
         }
       >
         Read answer →

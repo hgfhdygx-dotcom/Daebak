@@ -7,25 +7,25 @@
    표는 중립(헤더만 아주 연한 회색). 이 토큰이 모든 글·카테고리·제품 페이지에 적용됨.
    ───────────────────────────────────────────────────────────── */
 @theme {
-  --color-bg: #fffcf8;          /* 페이지: 거의 흰색 따뜻한 아이보리 */
-  --color-surface: #ffffff;     /* 카드: 흰색 */
-  --color-section: #faf6f0;     /* 섹션 밴드: 아주 연한 크림 */
-  --color-th: #f4f2ee;          /* 표 헤더: 아주 연한 중립 */
-  --color-ink: #161616;         /* 본문 */
-  --color-ink-muted: #6f675e;   /* meta·캡션 */
-  --color-line: #eae4db;        /* 연한 베이지그레이 보더 */
-  --color-accent: #e8483c;      /* 포인트 코랄레드 — 버튼·링크·CTA·소량 (로고 빨강과 근접) */
-  --color-accent-hover: #d93c31;/* 코랄 hover */
+  --color-bg: #fffcf7;          /* 페이지: 따뜻한 아이보리(누렇지 않게) */
+  --color-surface: #ffffff;     /* 카드: 깨끗한 흰색 */
+  --color-section: #faf6ef;     /* 섹션/hero 밴드: 아주 연한 크림 */
+  --color-th: #f4f0ea;          /* 표 헤더: 따뜻한 중립 베이지 */
+  --color-ink: #151515;         /* 본문: 선명한 near-black */
+  --color-ink-muted: #6f675f;   /* meta·summary: 따뜻한 회색(너무 연하지 않게) */
+  --color-line: #e7ded2;        /* 보더: 따뜻한 베이지 */
+  --color-accent: #e8483c;      /* 포인트 코랄레드 — 버튼·링크·CTA·소량 (로고 빨강) */
+  --color-accent-hover: #d83a30;/* 코랄 hover(살짝 진하게) */
   --color-accent-ink: #c13320;  /* 코랄 텍스트/대비 */
-  --color-accent-soft: #fdebe8; /* 코랄 아주 옅은 배경 — 장식·warning 뱃지 소량만 */
-  --color-link: #b9342c;        /* 본문 링크(코랄 계열, 가독) */
+  --color-accent-soft: #fdecea; /* 코랄 아주 옅은 배경 — 장식·hover·warning 소량만 */
+  --color-link: #b9362e;        /* 본문/카드 링크(코랄보다 약간 어두운 red-brown) */
   --color-trust: #2563eb;       /* 신뢰 블루 — 소량 */
-  --color-ink-soft: #9a9188;    /* 더 옅은 meta (muted-2) */
+  --color-ink-soft: #9b9288;    /* 더 옅은 보조 텍스트 (muted-2) */
   /* 정보형 뱃지: 대부분 '중립'. 출처/공식만 아주 옅은 블루. (색이 아니라 정렬·위계로 읽히게) */
-  --color-badge: #f1ede7;       /* 정보 뱃지 배경(중립) */
-  --color-badge-ink: #6b625a;   /* 정보 뱃지 글자(중립) */
-  --color-source: #eef2ff;      /* 출처/공식 뱃지 배경(옅은 블루) */
-  --color-source-ink: #3156c8;  /* 출처/공식 뱃지 글자 */
+  --color-badge: #f2ede6;       /* 정보 뱃지 배경(따뜻한 연베이지) */
+  --color-badge-ink: #6c6258;   /* 정보 뱃지 글자(따뜻한 gray-brown) */
+  --color-source: #eef3ff;      /* 출처/공식 뱃지 배경(아주 옅은 블루) */
+  --color-source-ink: #3458c9;  /* 출처/공식 뱃지 글자(차분한 블루) */
 
   --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;

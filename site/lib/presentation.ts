@@ -2,15 +2,16 @@
 import type { CatKind } from "@/components/CategoryIcon";
 
 // 카테고리 slug → 카드/허브 배경 tint (기존 홈 팔레트 유지)
+// taxonomy.json 의 bigCategory.tone 이 단일 소스. 아래는 tone 누락 시 폴백 기본 팔레트(아주 옅은 tint).
 export const CATEGORY_TINT: Record<string, string> = {
-  travel: "#F4F7FF",
-  food: "#FCF9EE",
-  "k-beauty": "#FCF4F7",
-  "k-fashion": "#F7F4FC",
-  shopping: "#FCF5EE",
-  "korean-rules": "#F5F4F1",
-  "local-places": "#F1F7F3",
-  products: "#F1F8F3",
+  travel: "#F2F5FA",
+  food: "#FBF7EC",
+  "k-beauty": "#FBF4F6",
+  "k-fashion": "#F6F4FA",
+  shopping: "#FAF5EC",
+  "korean-rules": "#F5F3EE",
+  "local-places": "#F1F6F1",
+  products: "#F1F7F2",
 };
 
 // taxonomy 의 icon 이 없을 때 카테고리 기본 아이콘(CategoryIcon kind)

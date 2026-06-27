@@ -31,7 +31,7 @@ export default function Badge({
   size?: "sm" | "md";
 }) {
   const v: BadgeVariant = variant || (tone ? _TONE[tone] : "default");
-  const sz = size === "md" ? "px-3 py-1 text-sm" : "px-2.5 py-0.5 text-xs";
+  const sz = size === "md" ? "px-3 py-1.5 text-sm" : "px-2.5 py-1 text-xs";
   return (
     <span
       className={`inline-flex items-center whitespace-nowrap rounded-full font-semibold ${sz} ${_STYLE[v]}`}
