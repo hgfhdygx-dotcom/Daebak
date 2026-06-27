@@ -3,14 +3,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AnswerCard from "@/components/AnswerCard";
 import Breadcrumb from "@/components/Breadcrumb";
+import SmartThumbnail from "@/components/SmartThumbnail";
 import JsonLd from "@/components/JsonLd";
 import {
+  categoryTone,
   getCategory,
   getCluster,
   getClustersOf,
   getPillarPost,
   getPostsByCluster,
   getTaxonomy,
+  type Post,
 } from "@/lib/posts";
 import { buildBreadcrumbLd } from "@/lib/schema";
 import { SITE_URL } from "@/lib/site";
@@ -71,7 +74,7 @@ export default async function ClusterPage({
   const url = `${SITE_URL}/${cat.slug}/${cl.slug}`;
 
   return (
-    <div className="mx-auto max-w-[1280px] px-5 py-9 sm:px-6 sm:py-12 lg:px-8">
+    <div className="mx-auto max-w-[1280px] px-5 py-7 sm:px-6 sm:py-10 lg:px-8">
       <JsonLd
         data={buildBreadcrumbLd([
           { name: "Home", url: SITE_URL },
@@ -86,14 +89,35 @@ export default async function ClusterPage({
           { name: cl.title },
         ]}
       />
-      <h1 className="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold leading-[1.12] tracking-tight">
-        {cl.title}
-      </h1>
-      {cl.description ? (
-        <p className="mt-2 max-w-2xl text-base leading-relaxed text-ink-muted">
-          {cl.description}
-        </p>
-      ) : null}
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="max-w-2xl">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold leading-[1.12] tracking-tight">
+            {cl.title}
+          </h1>
+          {cl.description ? (
+            <p className="mt-2 text-base leading-relaxed text-ink-muted">
+              {cl.description}
+            </p>
+          ) : null}
+        </div>
+        {/* 우측 compact 클러스터 비주얼(사진 or 흰 패널 폴백) — 모바일 숨김 */}
+        <div className="hidden shrink-0 sm:block">
+          <SmartThumbnail
+            post={{
+              title: cl.title,
+              cluster: cl.title,
+              bigCategorySlug: cat.slug,
+              clusterSlug: cl.slug,
+              imageKey: cl.visualKey,
+            } as Post}
+            aspect="4/3"
+            level="cluster"
+            iconKind={cl.icon}
+            tint={categoryTone(cl.bigCategory)}
+            className="w-40 rounded-2xl border border-line shadow-card lg:w-48"
+          />
+        </div>
+      </div>
 
       {/* 대표 글(Pillar) — 카드가 스스로 인텐트 라벨(MAIN GUIDE 등) 표시 */}
       {pillar ? (
@@ -109,7 +133,7 @@ export default async function ClusterPage({
       {published.length ? (
         <section className="mt-8">
           <h2 className="font-display text-lg font-bold tracking-tight">Traveler questions</h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
             {published.map((p) => (
               <AnswerCard key={p.slug} post={p} />
             ))}

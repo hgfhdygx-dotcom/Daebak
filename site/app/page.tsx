@@ -4,8 +4,6 @@ import { getAllPosts, getHomeCategories } from "@/lib/posts";
 import type { Post } from "@/lib/posts";
 import CategoryCard from "@/components/CategoryCard";
 import PopularGuides from "@/components/PopularGuides";
-import ExploreByPlace from "@/components/ExploreByPlace";
-import ExploreByNeed from "@/components/ExploreByNeed";
 import SectionBand from "@/components/SectionBand";
 import SmartThumbnail from "@/components/SmartThumbnail";
 import ClusterIcon from "@/components/ClusterIcon";
@@ -73,7 +71,7 @@ export default function Home() {
       <JsonLd data={websiteLd} />
 
       {/* ── Hero (sky → white gradient) : 검색 우선 + 우측 여행 비주얼 ── */}
-      <SectionBand variant="gradient" className="relative overflow-hidden pt-6 pb-10 sm:pt-9 sm:pb-14">
+      <SectionBand variant="gradient" className="relative overflow-hidden pt-5 pb-8 sm:pt-8 sm:pb-12">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-[0.06]"
@@ -141,6 +139,7 @@ export default function Home() {
             <SmartThumbnail
               post={HERO_VISUAL}
               aspect="4/3"
+              level="bigCategory"
               priority
               className="rounded-3xl border border-line shadow-card"
             />
@@ -153,15 +152,15 @@ export default function Home() {
       </SectionBand>
 
       {/* ── First things travelers ask (white) ── */}
-      <SectionBand variant="white" className="py-10">
+      <SectionBand variant="white" className="py-8">
         <PopularGuides posts={popular} />
       </SectionBand>
 
       {/* ── Browse Korea travel topics (sky) ── */}
-      <SectionBand variant="sky" className="py-10" id="categories">
+      <SectionBand variant="sky" className="py-8" id="categories">
         <div className="scroll-mt-20">
           <h2 className="font-display text-lg font-bold tracking-tight">Browse Korea travel topics</h2>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {homeCats.map((c) => (
               <CategoryCard key={c.slug} cat={c} />
             ))}
@@ -169,18 +168,11 @@ export default function Home() {
         </div>
       </SectionBand>
 
-      {/* ── Explore Korea by neighborhood (white) ── */}
-      <SectionBand variant="white" className="py-10">
-        <ExploreByPlace />
-      </SectionBand>
-
-      {/* ── Plan by what you need (sky) ── */}
-      <SectionBand variant="sky" className="py-10">
-        <ExploreByNeed />
-      </SectionBand>
+      {/* (재활성 가능) Explore by neighborhood / Plan by what you need 섹션은 일시 제거 —
+          컴포넌트(ExploreByPlace / ExploreByNeed)는 보존, 홈 렌더에서만 제외. */}
 
       {/* ── Product teaser + For Brands (white, 하단) ── */}
-      <SectionBand variant="white" className="py-10" id="for-brands">
+      <SectionBand variant="white" className="py-8" id="for-brands">
         <div className="grid scroll-mt-20 gap-4 lg:grid-cols-2">
           <div className="flex flex-col rounded-2xl border border-line bg-section p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">

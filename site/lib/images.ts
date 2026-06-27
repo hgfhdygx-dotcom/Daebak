@@ -1,6 +1,12 @@
 // 문맥 기반 이미지 시스템 (GEO 자산). 컴포넌트는 절대 이미지 URL 을 직접 들지 않고 이 레지스트리만 통한다.
-// 사진은 /public/images/travel/ 에 있을 때만 사용(점수≥80 & 파일 존재). 그 외엔 폴백 일러스트(그라데이션+아이콘).
+// 사진은 /public/images/travel/ 에 있을 때만 사용(점수≥80 & 파일 존재). 그 외엔 폴백(흰 패널 + 아이콘).
 // 외부 랜덤 URL 금지. 자동 생성 글도 같은 규칙(키워드+카테고리/클러스터/pageType 게이팅)으로 자동 선택.
+//
+// ▣ 인물 금지 규칙 (이미지 프롬프트/선택의 기본 규칙): "no people, no faces, no human subjects".
+//   금지 = 사람 얼굴 · 인물 중심 · 군중 · 모델 · 셀카/패션샷 · 여행자 인물컷 · 광고형 인물.
+//   허용 = 공항 내부 · AREX/지하철/버스/택시 외관 · 서울 스카이라인 · 거리/동네 풍경 · 교통수단 ·
+//          카드/티머니 등 결제 오브젝트 · 사람 없는 장소 풍경 · 아이콘/벡터 폴백.
+//   레지스트리에 새 이미지를 추가할 때도 위 규칙을 지킬 것(아래 항목은 전부 장소/사물형).
 import fs from "node:fs";
 import path from "node:path";
 import { cardIcon } from "@/lib/cardIntent";
@@ -158,4 +164,9 @@ export function pickImage(post: Post): ThumbResult {
     return { mode: "photo", image: best.img, iconKind, alt: best.img.alt, caption: best.img.caption };
   }
   return { mode: "illustration", iconKind, alt: fallbackAlt };
+}
+
+// 실제 사진(고관련도 + 파일 존재)이 있는지. article 카드가 '썸네일 vs 작은 아이콘 배지'를 결정할 때 사용.
+export function hasPhoto(post: Post): boolean {
+  return pickImage(post).mode === "photo";
 }

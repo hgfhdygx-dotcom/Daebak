@@ -81,21 +81,23 @@ export default async function CategoryPage({
         stats={stats}
         icon={icon}
         tint={tint}
+        visualKey={cat.visualKey}
+        categorySlug={cat.slug}
       />
 
       <QuickTopicChips topics={topics} />
 
       {/* 대표 라이브 가이드(자동 선택) */}
       {featured ? (
-        <section className="mt-8">
+        <section className="mt-6">
           <AnswerCard post={featured} variant="featured" />
         </section>
       ) : null}
 
       {/* 가이드 컬렉션 카드 — 라이브 우선 */}
       {liveClusters.length ? (
-        <section className="mt-8">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="mt-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {liveClusters.map((cl) => (
               <ClusterCard
                 key={cl.id}
@@ -115,7 +117,7 @@ export default async function CategoryPage({
           <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
             Coming soon
           </h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {soonClusters.map((cl) => (
               <ClusterCard key={cl.id} cluster={cl} categorySlug={cat.slug} counts={clusterCounts(cl.slug)} />
             ))}

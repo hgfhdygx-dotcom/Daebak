@@ -72,6 +72,7 @@ export type Cluster = {
   bigCategory: string;
   description?: string;
   icon?: string;
+  visualKey?: string; // 이미지 레지스트리 키(cluster 카드/페이지 비주얼). 없으면 폴백.
   featured?: boolean;
   pillarQuestions?: ClusterQ[];
   supportingQuestions?: ClusterQ[];
@@ -93,6 +94,7 @@ export type BigCategory = {
   heroSubtitle?: string;
   navTopics?: NavTopic[];
   tone?: string;
+  visualKey?: string; // 이미지 레지스트리 키(bigCategory 카드/허브 비주얼). 없으면 폴백.
   clusters: string[];
   status?: string;
 };
@@ -350,6 +352,7 @@ export type HomeCategory = {
   blurb: string;
   icon: string;
   tint: string;
+  visualKey?: string;
   href: string;
   active: boolean;
   pills: { label: string; href: string }[];
@@ -362,6 +365,7 @@ export function getHomeCategories(): HomeCategory[] {
     blurb: cat.blurb || cat.description || "",
     icon: cat.icon || CATEGORY_ICON_FALLBACK[cat.slug] || "products",
     tint: cat.tone || CATEGORY_TINT[cat.slug] || "#faf6f0",
+    visualKey: cat.visualKey,
     href: categoryHref(cat),
     active: isActiveCategory(cat.slug),
     pills: getNavTopics(cat)
