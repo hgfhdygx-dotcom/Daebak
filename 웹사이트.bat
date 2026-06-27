@@ -24,7 +24,9 @@ if not defined PY (
 
 echo.
 echo  The browser will open automatically at:  http://localhost:8502
-echo  (On your phone, same Wi-Fi:  http://[this-PC-IP]:8502 )
+set "TSIP="
+for /f "usebackq delims=" %%i in (`tailscale ip -4`) do if not defined TSIP set "TSIP=%%i"
+if defined TSIP (echo  Phone [Tailscale ON]:  http://%TSIP%:8502) else (echo  Phone [same Wi-Fi]:  open Tailscale, then http://[PC-IP]:8502)
 echo  To stop: just close this window.
 echo.
 chcp 65001 >nul
