@@ -321,13 +321,23 @@ def _render_gen_results():
 
     def _publish(drafts_to_pub):
         import publish
+        # 더블클릭/재클릭 방지: 이미 발행된 slug 는 건너뜀(중복 push 방지, 멱등).
+        fresh = [d for d in drafts_to_pub
+                 if (outputs.get_by_slug((d.get("seo") or {}).get("slug", "")) or {}).get("status") != "published"]
+        if not fresh:
+            return {"ok": True, "message": "이미 발행된 글이에요 — 중복 발행하지 않았어요.", "results": []}
         with st.spinner("발행 중…"):
-            res = publish.publish_batch(drafts_to_pub, config)
+            res = publish.publish_batch(fresh, config)
+        pub_slugs = set()
         for r in res.get("results", []):
             if r.get("ok"):
-                d = next((x for x in drafts_to_pub if (x.get("seo") or {}).get("slug") == r["slug"]), None)
+                pub_slugs.add(r["slug"])
+                d = next((x for x in fresh if (x.get("seo") or {}).get("slug") == r["slug"]), None)
                 if d and d.get("plan_id"):
                     plan.set_status(d["plan_id"], "published")
+        # 발행된 건 결과 목록에서 제거 → 발행 버튼이 사라져 재클릭 자체가 불가
+        ss["gen_drafts"] = [d for d in (ss.get("gen_drafts") or [])
+                            if (d.get("seo") or {}).get("slug") not in pub_slugs]
         return res
 
     c1, c2 = st.columns(2)
@@ -656,7 +666,10 @@ def render_quick():
         st.subheader("발행")
         if report.get("gate") == "rewrite":
             st.error("GEO 점수가 낮아요(재작성 권장). 그래도 발행하려면 아래 버튼을 누르세요.")
-        if st.button("✅ OK 발행", type="primary", key="publish_btn"):
+        already_pub = (outputs.get_by_slug((seo or {}).get("slug", "")) or {}).get("status") == "published"
+        if already_pub:
+            st.info("이미 발행된 글이에요 — 중복 발행하지 않아요. (수정하려면 새로 생성하세요)")
+        if st.button("✅ OK 발행", type="primary", key="publish_btn", disabled=already_pub):
             import publish
             with st.spinner("발행 중…"):
                 res = publish.publish_article(draft, config)
