@@ -23,10 +23,13 @@ if not defined PY (
 )
 
 echo.
-echo  Open in your browser:  http://localhost:8502
+echo  The browser will open automatically at:  http://localhost:8502
+echo  (On your phone, same Wi-Fi:  http://[this-PC-IP]:8502 )
 echo  To stop: just close this window.
 echo.
 chcp 65001 >nul
 set PYTHONUTF8=1
-%PY% -m streamlit run app.py --server.port 8502 --server.address 0.0.0.0 --server.runOnSave true
+rem 서버가 뜬 뒤 ~5초 후 기본 브라우저 자동 열기(별도 프로세스 — streamlit 은 그대로 포그라운드 실행)
+start "" /b powershell -NoProfile -WindowStyle Hidden -Command "Start-Sleep -Seconds 5; Start-Process 'http://localhost:8502'"
+%PY% -m streamlit run app.py --server.port 8502 --server.address 0.0.0.0 --server.headless true --server.runOnSave true
 pause
