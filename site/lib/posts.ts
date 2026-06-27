@@ -34,6 +34,7 @@ export type PostMeta = {
   pillarQuestion?: string;
   questionType?: "pillar" | "supporting" | "faq";
   pageType?: string;
+  intent?: string;
   needsFreshSource?: boolean;
   relatedGuides?: string[];
   geoScore?: number;
@@ -52,6 +53,7 @@ export type Cluster = {
   pillarQuestions?: ClusterQ[];
   supportingQuestions?: ClusterQ[];
   faqQuestions?: ClusterQ[];
+  officialSources?: Source[];
   priority?: number;
   status?: string;
   publishQueue?: string[];

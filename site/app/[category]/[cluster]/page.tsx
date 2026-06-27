@@ -95,15 +95,10 @@ export default async function ClusterPage({
         </p>
       ) : null}
 
-      {/* 대표 글(Pillar) */}
+      {/* 대표 글(Pillar) — 카드가 스스로 인텐트 라벨(MAIN GUIDE 등) 표시 */}
       {pillar ? (
         <section className="mt-7">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-accent-ink">
-            Main guide
-          </h2>
-          <div className="mt-3">
-            <AnswerCard post={pillar} />
-          </div>
+          <AnswerCard post={pillar} variant="featured" />
         </section>
       ) : null}
 

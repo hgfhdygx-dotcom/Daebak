@@ -113,6 +113,12 @@
         { "question": "Can I shower or sleep at Incheon Airport?", "slug": "incheon-airport-shower-sleep" }
       ],
       "faqQuestions": [],
+      "officialSources": [
+        { "url": "https://www.airport.kr/ap/en/index.do", "domain": "airport.kr" },
+        { "url": "https://www.arex.or.kr/main.do", "domain": "arex.or.kr" },
+        { "url": "https://www.letskorail.com/ebizbf/EbizbfForeign_pr16100.do", "domain": "letskorail.com" },
+        { "url": "https://english.visitkorea.or.kr/", "domain": "visitkorea.or.kr" }
+      ],
       "publishQueue": [
         "incheon-airport-to-seoul",
         "is-arex-express-worth-it",

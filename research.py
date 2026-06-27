@@ -443,6 +443,19 @@ def build_cluster_pack(cluster_record: dict, pillar_question: str, engine: str |
     engine = engine or getattr(cfg, "RESEARCH_ENGINE", "openai")
     cslug = cluster_record.get("slug", "") if cluster_record else ""
     ev = gather(pillar_question, engine, cfg, progress_cb)
+    # 큐레이트된 공식 출처(taxonomy cluster.officialSources)를 웹 출처 앞에 병합 → 공식 우선(권위 정렬),
+    # 항상 Sources 에 포함. note 는 describe_source 로 보정(공식 라벨).
+    curated = []
+    for o in ((cluster_record or {}).get("officialSources") or []):
+        u = clean_url(o.get("url", ""))
+        if not u:
+            continue
+        d = domain_of(u)
+        curated.append({"url": u, "domain": d, "note": o.get("note") or describe_source(d)})
+    seen = {c["url"] for c in curated}
+    web = [w for w in (ev.get("sources") or []) if w.get("url") not in seen]
+    merged = curated + web
+    merged.sort(key=lambda s: _authority_score(s.get("domain", "")))
     pack = {
         "clusterSlug": cslug,
         "pillarQuestion": pillar_question,
@@ -450,7 +463,7 @@ def build_cluster_pack(cluster_record: dict, pillar_question: str, engine: str |
         "created_at": storage.now_kst().isoformat(timespec="seconds"),
         "lastChecked": storage.today_kst_str(),
         "ttl_days": int(ttl_days),
-        "officialSources": ev.get("sources") or [],
+        "officialSources": merged,
         "commonFacts": [],          # (선택) 추후 LLM 추출 — 현재는 research_text 가 사실을 운반
         "priceRanges": {}, "timeRanges": {}, "transportOptions": [],
         "paymentFacts": {}, "airportTerminalFacts": {},

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getActiveCategorySlugs, getAllPosts } from "@/lib/posts";
-import Badge from "@/components/Badge";
+import AnswerCard from "@/components/AnswerCard";
 import MostAsked from "@/components/MostAsked";
 import CategoryIcon, { type CatKind } from "@/components/CategoryIcon";
 import JsonLd from "@/components/JsonLd";
@@ -82,15 +82,6 @@ const CATEGORIES: {
   { label: "Products", blurb: "Beauty, fashion, snacks, gifts", q: "product", slug: "products", kind: "products", tint: "#F1F8F3" },
 ];
 
-function fmtDate(d?: string): string {
-  if (!d) return "";
-  const iso = d.length === 7 ? `${d}-01` : d;
-  const dt = new Date(`${iso}T00:00:00`);
-  return Number.isNaN(dt.getTime())
-    ? d
-    : dt.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-}
-
 export default function Home() {
   const posts = getAllPosts();
   const featured = posts[0];
@@ -170,43 +161,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Row 3: Featured answer (full width) ── */}
+      {/* ── Row 3: Featured answer (full width) — 범용 AnswerCard(인텐트 라벨 자동) ── */}
       {featured ? (
         <section className="mt-6">
-          <Link
-            href={`/answers/${featured.slug}`}
-            className="group flex flex-col rounded-2xl border border-line bg-surface p-5 transition-shadow hover:shadow-sm sm:p-6"
-          >
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">
-              Featured answer
-            </span>
-            <h2 className="mt-1.5 font-display text-xl font-bold leading-snug tracking-tight text-ink transition-colors group-hover:text-accent-ink sm:text-2xl">
-              {featured.question || featured.title}
-            </h2>
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {(featured.highlights || []).slice(0, 2).map((h, i) => (
-                <Badge key={i} tone="muted">
-                  {h}
-                </Badge>
-              ))}
-              {featured.dateModified || featured.datePublished ? (
-                <Badge tone="muted">
-                  Updated {fmtDate(featured.dateModified || featured.datePublished)}
-                </Badge>
-              ) : null}
-              {(featured.sources?.length ?? 0) > 0 ? (
-                <Badge tone="trust">Sources</Badge>
-              ) : null}
-            </div>
-            {featured.summary ? (
-              <p className="mt-2.5 line-clamp-2 text-sm leading-relaxed text-ink-muted">
-                {featured.summary}
-              </p>
-            ) : null}
-            <span className="mt-3 inline-flex w-fit rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white">
-              Read answer →
-            </span>
-          </Link>
+          <AnswerCard post={featured} variant="featured" />
         </section>
       ) : null}
 

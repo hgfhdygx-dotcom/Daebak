@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import AnswerCard from "@/components/AnswerCard";
 import { getAllPosts } from "@/lib/posts";
 
 export const metadata: Metadata = {
@@ -48,22 +48,11 @@ export default async function SearchPage({
         </p>
       )}
 
-      <ul className="mt-4 divide-y divide-line border-t border-line">
+      <div className="mt-4 grid gap-3">
         {results.map((p) => (
-          <li key={p.slug}>
-            <Link href={`/answers/${p.slug}`} className="group block py-4">
-              <span className="font-display text-lg font-medium transition-colors group-hover:text-accent-ink">
-                {p.question || p.title}
-              </span>
-              {p.summary ? (
-                <span className="mt-1 block text-sm text-ink-muted">
-                  {p.summary}
-                </span>
-              ) : null}
-            </Link>
-          </li>
+          <AnswerCard key={p.slug} post={p} variant="list" />
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

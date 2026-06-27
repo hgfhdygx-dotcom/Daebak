@@ -66,7 +66,7 @@ def _llm_meta(question: str, synth: dict, client, cfg) -> dict:
 
 
 _FM_EXTRA_KEYS = ("bigCategory", "bigCategorySlug", "cluster", "clusterSlug", "pillarSlug",
-                  "pillarQuestion", "questionType", "pageType", "needsFreshSource",
+                  "pillarQuestion", "questionType", "pageType", "intent", "needsFreshSource",
                   "relatedGuides", "geoScore", "answerSummary")
 
 

@@ -307,7 +307,8 @@ def run_planned(plan_id: str, cfg=None, progress_cb=None, fresh_override: bool |
 
     # 2) 합성(pageType 골격)
     _p(0.60, "본문 합성 중…")
-    synth = synthesis.synthesize(q, evidence, oclient, cfg, page_type=page_type)
+    synth = synthesis.synthesize(q, evidence, oclient, cfg, page_type=page_type,
+                                 question_type=row.get("questionType") or "supporting")
     draft["synth"] = synth
 
     # 3) SEO + 택소노미/관련글 frontmatter
@@ -320,6 +321,7 @@ def run_planned(plan_id: str, cfg=None, progress_cb=None, fresh_override: bool |
         "cluster": row.get("cluster", ""), "clusterSlug": cluster_slug,
         "pillarSlug": row.get("pillarSlug", ""), "pillarQuestion": row.get("pillarQuestion", ""),
         "questionType": row.get("questionType", "supporting"), "pageType": page_type,
+        "intent": row.get("intent", ""),
         "needsFreshSource": needs_fresh, "relatedGuides": related,
     }
     seo_out = seo_mod.build_seo(q, synth, oclient, cfg, extra=extra)

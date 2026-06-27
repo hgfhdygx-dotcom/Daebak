@@ -71,6 +71,27 @@ def _skeleton_clause(page_type: str) -> str:
                      "Official source). Only attributes the research supports.")
     return " \n".join(parts)
 
+
+def _scope_clause(question_type: str) -> str:
+    """questionType 별 범위 규칙 — 개요/직답/FAQ 에 따라 at_a_glance·highlights·lead 의 '범위'를 맞춘다.
+    (규칙: 개요 질문에 특정 수단의 단일 숫자를 박지 말 것)."""
+    qt = (question_type or "supporting").strip().lower()
+    if qt == "pillar":
+        return ("SCOPE (overview / pillar): This is the cluster's MAIN OVERVIEW. Do NOT pin the answer to "
+                "ONE option's single exact number. `at_a_glance` = 2-4 CATEGORY or RANGE picks "
+                "(e.g. 'Train · Bus · Taxi', '₩4,000–100,000 across options', '43–90 min'), never one option "
+                "with one exact price. `highlights` = 3-4 NON-numeric scope phrases (e.g. '4 main options', "
+                "'Fixed vs flexible', 'Door-to-door or station'). The body table still compares concrete options, "
+                "but the lead/summary stays at overview altitude (what options exist + how to choose), not "
+                "'take X for ₩Y'.")
+    if qt == "faq":
+        return ("SCOPE (faq): Keep it light — `at_a_glance` 0-1 item, `highlights` 0-1, body 2-4 sentences that "
+                "answer directly. No long sections.")
+    return ("SCOPE (supporting): Answer THIS specific question directly. `at_a_glance` + `highlights` carry the "
+            "concrete number(s) for THIS question's intent ONLY — a cost question leads with the price, a time "
+            "question with the duration, a single-mode question with that mode's figures. Don't pad with "
+            "unrelated options.")
+
 # 영어 'AI 티' 상투어 — 피할 것(드래프트 AI_TELLS 영어판)
 AI_TELLS = [
     "not only ... but also", "boasts", "a must-visit", "must-visit for everyone",
@@ -163,7 +184,8 @@ def _now_ym() -> str:
     return datetime.now(KST).strftime("%Y-%m")
 
 
-def _system_prompt(last_updated: str, page_type: str = "practical") -> str:
+def _system_prompt(last_updated: str, page_type: str = "practical",
+                   question_type: str = "supporting") -> str:
     tells = "; ".join(AI_TELLS)
     return (
         "You write English answer articles for foreigners (living in or visiting Korea) so that AI search "
@@ -200,7 +222,10 @@ def _system_prompt(last_updated: str, page_type: str = "practical") -> str:
         "6. SOURCE URL DISCIPLINE: You are given available_sources (a list of REAL urls). A key_fact may end "
         "with ' — <url>' ONLY when that exact url is in available_sources. NEVER invent, guess, shorten, or "
         "placeholder a URL. NEVER use example.com / example.org / any fake URL. If you have no real source url "
-        "for a fact, write the fact with NO url. Same inside the body: never link to a url not in available_sources.\n"
+        "for a fact, write the fact with NO url. Same inside the body: never link to a url not in available_sources. "
+        "PREFER OFFICIAL SOURCES: when available_sources includes an official site (government .go.kr/.or.kr, or "
+        "the operator's/authority's own site — e.g. an airport, railway, transit-card, or tourism authority), "
+        "attach THAT official url in preference to a third-party blog for the same fact.\n"
         "7. FAQ: End with an FAQ that answers each sub-question with a SPECIFIC first sentence (the concrete "
         "answer with the actual numbers/names), not a broad restatement of the question.\n"
         "8. EMPHASIS: In the markdown BODY only, wrap THE single most important phrase of each H2 section (the "
@@ -213,7 +238,8 @@ def _system_prompt(last_updated: str, page_type: str = "practical") -> str:
         "Use a specific year ONLY for an actual past event (e.g. 'required since 2021'), never as a freshness stamp.\n"
         "10. HUMAN TONE: Sound like a knowledgeable human editor, NOT like AI. Avoid these AI-tell phrases: "
         f"{tells}. No marketing fluff, no 'in conclusion'.\n\n"
-        + _skeleton_clause(page_type) + "\n\n"
+        + _skeleton_clause(page_type) + "\n"
+        + _scope_clause(question_type) + "\n\n"
         + "OUTPUT STRICT JSON ONLY with this shape:\n"
         "{\n"
         '  "title": "<concise, answer-style title, no year>",\n'
@@ -294,9 +320,10 @@ def enforce_verify(result: dict, pack: dict) -> dict:
     return result
 
 
-def synthesize(question: str, pack: dict, client, cfg=None, page_type: str = "practical") -> dict:
+def synthesize(question: str, pack: dict, client, cfg=None, page_type: str = "practical",
+               question_type: str = "supporting") -> dict:
     """증거 묶음 → 영어 글(JSON). gpt-4o 1콜. 키없음/실패 → 무료 폴백. 성공 시 bump_usage(1).
-    page_type 으로 §14 섹션 골격 + 비교표/Key facts 표 요구를 프롬프트에 주입(출력 JSON 형태는 동일)."""
+    page_type 으로 §14 섹션 골격, question_type 으로 범위(개요/직답/FAQ) 규칙을 프롬프트에 주입(출력 JSON 형태 동일)."""
     cfg = cfg or config
     q = (question or "").strip()
     if client is None:
@@ -305,7 +332,7 @@ def synthesize(question: str, pack: dict, client, cfg=None, page_type: str = "pr
         last_updated = _now_ym()
         resp = client.chat.completions.create(
             model=getattr(cfg, "SYNTH_MODEL", "gpt-4o"),
-            messages=[{"role": "system", "content": _system_prompt(last_updated, page_type)},
+            messages=[{"role": "system", "content": _system_prompt(last_updated, page_type, question_type)},
                       {"role": "user", "content": _evidence_payload(q, pack)}],
             response_format={"type": "json_object"}, temperature=0.4, max_tokens=2200)
         data = json.loads(resp.choices[0].message.content or "{}")
