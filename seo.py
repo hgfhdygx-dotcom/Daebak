@@ -14,6 +14,7 @@ import json
 import re
 
 import config
+import research
 import storage
 import usage
 from llm import KST
@@ -95,7 +96,8 @@ def build_seo(question: str, synth: dict, client, cfg=None, extra: dict | None =
         "datePublished": today,
         "dateModified": today,
         "lastUpdatedLabel": (synth.get("last_updated") or today[:7]),
-        "sources": [{"url": s.get("url", ""), "domain": s.get("domain", "")}
+        "sources": [{"url": s.get("url", ""), "domain": s.get("domain", ""),
+                     "note": research.describe_source(s.get("domain", ""))}
                     for s in (synth.get("sources") or []) if s.get("url")][:20],
         "faq": [{"q": f.get("q", ""), "a": f.get("a", "")} for f in (synth.get("faq") or []) if f.get("q")],
         "citationPack": {

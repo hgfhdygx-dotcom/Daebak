@@ -68,28 +68,30 @@ export default function Article({
             <FaqSection items={post.faq} />
           ) : null}
 
-          {/* 출처 — 작은 칩 */}
+          {/* 출처 — 도메인 + 한 줄 설명(공식/제3자 구분) */}
           {post.sources && post.sources.length > 0 ? (
             <section className="mt-12 border-t border-line pt-6" aria-label="Sources">
               <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
                 Sources
               </h2>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <ul className="mt-3 space-y-2">
                 {post.sources.map((s, i) => (
-                  <a
-                    key={i}
-                    href={s.url}
-                    target="_blank"
-                    rel="nofollow noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-ink transition-colors hover:border-accent hover:text-accent-ink"
-                  >
-                    <span aria-hidden className="text-xs">
+                  <li key={i} className="text-sm leading-relaxed">
+                    <span aria-hidden className="mr-1.5 text-xs">
                       🔗
                     </span>
-                    {s.domain || s.url}
-                  </a>
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="nofollow noreferrer"
+                      className="font-medium text-accent-ink underline underline-offset-2 transition-opacity hover:opacity-80"
+                    >
+                      {s.domain || s.url}
+                    </a>
+                    {s.note ? <span className="text-ink-muted"> — {s.note}</span> : null}
+                  </li>
                 ))}
-              </div>
+              </ul>
             </section>
           ) : null}
 

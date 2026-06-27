@@ -31,6 +31,43 @@ _OFFICIAL_HINTS = ("hikorea", "k-eta", "keta", "airport", "arex", "korail", "vis
                    "mofa", "immigration", "embassy", "consulate", "gov.kr")
 
 
+# 출처 도메인 → 한 줄 설명(공식/제3자 구분). 사용자가 출처 신뢰도를 바로 판단하게(§F-3 권위 신호).
+# 알려진 한국 공식/관광 도메인은 구체 설명, 나머지는 권위 등급으로 일반 설명.
+_SOURCE_KNOWN = [
+    (("airportrailroad.com", "arex.or.kr"), "AREX — official airport railroad operator"),
+    (("airport.kr", "airport.or.kr", "airportlimousine"), "Incheon Airport — official"),
+    (("letskorail.com", "korail"), "KORAIL — national rail operator (official)"),
+    (("hikorea.go.kr",), "HiKorea — official immigration service"),
+    (("k-eta.go.kr", "keta.go.kr"), "K-ETA — official entry authorization"),
+    (("tmoney",), "T-money — official transit card"),
+    (("wowpass",), "WOWPASS — official prepaid card"),
+    (("visitkorea", "knto", "english.visitkorea"), "Korea Tourism Organization (official)"),
+    (("visitseoul", "seoul.go.kr"), "Seoul city tourism (official)"),
+    (("mofa.go.kr", "0404.go.kr"), "Korean Ministry of Foreign Affairs (official)"),
+]
+
+
+def describe_source(domain: str) -> str:
+    """출처 도메인 → 간략 설명. 공식 운영사/정부/관광청은 구체적으로, 그 외는 정직하게 '제3자 가이드'."""
+    d = (domain or "").lower().strip()
+    if not d:
+        return ""
+    for keys, desc in _SOURCE_KNOWN:
+        if any(k in d for k in keys):
+            return desc
+    if d.endswith(".go.kr") or ".gov" in d:
+        return "Korean government site (official)"
+    if d.endswith(".or.kr"):
+        return "Public institution / non-profit (Korea)"
+    if d.endswith(".ac.kr") or d.endswith(".edu"):
+        return "Academic institution"
+    if d.endswith(".co.kr") or d.endswith(".kr"):
+        return "Korean site (third-party)"
+    if any(k in d for k in ("blog", "tistory", "naver.com", "brunch")):
+        return "Personal blog (third-party)"
+    return "Independent travel guide (third-party)"
+
+
 def _authority_score(domain: str) -> int:
     """출처 권위 점수(낮을수록 우선): 정부/공식 → 공식기관 → .or.kr/.edu → 기타."""
     d = (domain or "").lower()

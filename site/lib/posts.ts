@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 
-export type Source = { url: string; domain?: string };
+export type Source = { url: string; domain?: string; note?: string };
 export type Faq = { q: string; a: string };
 export type CitationPack = { answer?: string; keyFacts?: string[]; quotable?: string };
 export type GlanceItem = { label: string; value: string };
