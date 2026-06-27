@@ -45,7 +45,7 @@ _EDITABLE = {
     "title", "slug", "answerSummary", "bigCategory", "bigCategorySlug", "cluster", "clusterSlug",
     "pillarQuestion", "pillarSlug", "questionType", "pageType", "intent", "priority",
     "needsFreshSource", "publishMode", "relatedGuides", "supportingQuestions", "sourceRequirements",
-    "duplicateRisk", "dedupeOf", "dedupeAction", "geoScore", "question",
+    "duplicateRisk", "dedupeOf", "dedupeAction", "geoScore", "question", "tags", "featured",
 }
 
 

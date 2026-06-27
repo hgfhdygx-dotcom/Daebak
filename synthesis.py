@@ -92,6 +92,31 @@ def _scope_clause(question_type: str) -> str:
             "question with the duration, a single-mode question with that mode's figures. Don't pad with "
             "unrelated options.")
 
+
+def _intent_clause(question: str) -> str:
+    """질문 의도별 본문 규칙(제목↔본문 정합). 키워드 기반·범용. worth-it 은 구조 필드까지 요구."""
+    q = (question or "").lower()
+    if re.search(r"worth it|worth the|should i\b|가치|탈\s*만", q):
+        return ("INTENT = WORTH-IT: Open with a clear VERDICT (Yes / No / It depends — plus one qualifying line). "
+                "Then state WHO it's good for and WHO it's not for, and name the main ALTERNATIVE. Never end with a "
+                "vague 'good for speed and comfort'. ALSO output JSON fields: verdict (one sentence), goodFor (2-4), "
+                "notFor (1-3), alternatives (0-3).")
+    if re.search(r"cheapest|cheaper|budget|저렴", q):
+        return "INTENT = CHEAPEST: lead with the price and the cheapest pick; note the trade-off vs faster/comfier options."
+    if re.search(r"fastest|quickest|빠른", q):
+        return "INTENT = FASTEST: lead with the travel time; name the fastest option and when it isn't worth it."
+    if re.search(r"how much|cost|price|fare|요금|얼마", q):
+        return "INTENT = COST: give the price RANGE and what makes it vary (distance, time of day, surcharges)."
+    if re.search(r"\bbest\b|recommend|추천", q):
+        return "INTENT = BEST: give the recommendation CRITERIA (for whom / when), not just one pick."
+    if re.search(r"how (do|to)\b|방법", q):
+        return "INTENT = HOW-TO: answer as clear steps or a short decision list."
+    if re.search(r"where to buy|어디서 사", q):
+        return "INTENT = WHERE-TO-BUY: name store types, online options, and locations."
+    if re.search(r"what to buy|뭐 사|뭐 살", q):
+        return "INTENT = WHAT-TO-BUY: recommend product CATEGORIES (not one item's exact price)."
+    return ""
+
 # 영어 'AI 티' 상투어 — 피할 것(드래프트 AI_TELLS 영어판)
 AI_TELLS = [
     "not only ... but also", "boasts", "a must-visit", "must-visit for everyone",
@@ -185,7 +210,7 @@ def _now_ym() -> str:
 
 
 def _system_prompt(last_updated: str, page_type: str = "practical",
-                   question_type: str = "supporting") -> str:
+                   question_type: str = "supporting", question: str = "") -> str:
     tells = "; ".join(AI_TELLS)
     return (
         "You write English answer articles for foreigners (living in or visiting Korea) so that AI search "
@@ -239,7 +264,8 @@ def _system_prompt(last_updated: str, page_type: str = "practical",
         "10. HUMAN TONE: Sound like a knowledgeable human editor, NOT like AI. Avoid these AI-tell phrases: "
         f"{tells}. No marketing fluff, no 'in conclusion'.\n\n"
         + _skeleton_clause(page_type) + "\n"
-        + _scope_clause(question_type) + "\n\n"
+        + _scope_clause(question_type) + "\n"
+        + _intent_clause(question) + "\n\n"
         + "OUTPUT STRICT JSON ONLY with this shape:\n"
         "{\n"
         '  "title": "<concise, answer-style title, no year>",\n'
@@ -253,7 +279,9 @@ def _system_prompt(last_updated: str, page_type: str = "practical",
         '  "citation_pack": {"answer": "<one specific line>", "key_facts": ["<specific fact'
         '[ — <url from available_sources>]>", "..."], "quotable": "<one copy-pasteable sentence>"},\n'
         '  "faq": [{"q": "<sub-question>", "a": "<specific direct first-sentence answer>"}],\n'
-        '  "verify_flags": ["<short note of each thing the human must verify>"]\n'
+        '  "verify_flags": ["<short note of each thing the human must verify>"],\n'
+        '  "verdict": "<ONLY for worth-it/should-I questions: Yes / No / It depends + one short line; omit otherwise>",\n'
+        '  "goodFor": ["<who it suits>"], "notFor": ["<who should skip it>"], "alternatives": ["<the main alternative>"]\n'
         "}\n"
         "Every key_fact url MUST appear verbatim in available_sources; if none applies, include the fact with "
         "no url rather than inventing one."
@@ -332,7 +360,8 @@ def synthesize(question: str, pack: dict, client, cfg=None, page_type: str = "pr
         last_updated = _now_ym()
         resp = client.chat.completions.create(
             model=getattr(cfg, "SYNTH_MODEL", "gpt-4o"),
-            messages=[{"role": "system", "content": _system_prompt(last_updated, page_type, question_type)},
+            messages=[{"role": "system",
+                       "content": _system_prompt(last_updated, page_type, question_type, q)},
                       {"role": "user", "content": _evidence_payload(q, pack)}],
             response_format={"type": "json_object"}, temperature=0.4, max_tokens=2200)
         data = json.loads(resp.choices[0].message.content or "{}")
@@ -347,6 +376,10 @@ def synthesize(question: str, pack: dict, client, cfg=None, page_type: str = "pr
             "highlights": [str(h).strip() for h in (data.get("highlights") or []) if str(h).strip()][:4],
             "faq": [f for f in (data.get("faq") or []) if isinstance(f, dict) and f.get("q")],
             "verify_flags": [str(v).strip() for v in (data.get("verify_flags") or []) if str(v).strip()],
+            "verdict": str(data.get("verdict") or "").strip(),
+            "goodFor": [str(x).strip() for x in (data.get("goodFor") or []) if str(x).strip()][:4],
+            "notFor": [str(x).strip() for x in (data.get("notFor") or []) if str(x).strip()][:3],
+            "alternatives": [str(x).strip() for x in (data.get("alternatives") or []) if str(x).strip()][:3],
             "sources": pack.get("sources") or [],
             "last_updated": last_updated,
             "used_llm": True,

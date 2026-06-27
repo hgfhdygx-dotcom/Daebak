@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import CategoriesMenu from "@/components/CategoriesMenu";
+import ClusterIcon from "@/components/ClusterIcon";
+import { getCategoryNav } from "@/lib/posts";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 
 const spaceGrotesk = Space_Grotesk({
@@ -26,6 +29,7 @@ export const metadata: Metadata = {
 };
 
 function SiteHeader() {
+  const nav = getCategoryNav();
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-4 px-5 sm:px-6 lg:px-8">
@@ -52,12 +56,7 @@ function SiteHeader() {
             </a>
           </div>
           <nav className="hidden items-center gap-5 text-sm sm:flex">
-            <Link
-              href="/#categories"
-              className="text-ink-muted transition-colors hover:text-ink"
-            >
-              Categories
-            </Link>
+            <CategoriesMenu categories={nav} />
             <Link
               href="/#for-brands"
               className="text-ink-muted transition-colors hover:text-ink"
@@ -100,16 +99,37 @@ function SiteHeader() {
             >
               <span aria-hidden>☰</span>
             </summary>
-            <div className="absolute right-0 z-50 mt-2 w-44 rounded-2xl border border-line bg-surface p-2 shadow-lg">
-              <Link
-                href="/#categories"
-                className="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-section"
-              >
-                Categories
-              </Link>
+            <div className="absolute right-0 z-50 mt-2 max-h-[72vh] w-64 overflow-auto rounded-2xl border border-line bg-surface p-2 shadow-lg">
+              {nav.map((c) => (
+                <details key={c.slug} className="border-b border-line/60 last:border-0">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink [&::-webkit-details-marker]:hidden">
+                    <span className="flex items-center gap-2">
+                      <span className="text-accent-ink">
+                        <ClusterIcon kind={c.icon} className="h-4 w-4" />
+                      </span>
+                      {c.title}
+                    </span>
+                    <span aria-hidden className="text-xs text-ink-muted">
+                      ＋
+                    </span>
+                  </summary>
+                  <ul className="pb-2 pl-9">
+                    {c.topics.map((t, i) => (
+                      <li key={i}>
+                        <Link
+                          href={t.href}
+                          className="block py-1 text-[0.8rem] text-ink-muted hover:text-accent-ink"
+                        >
+                          {t.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ))}
               <Link
                 href="/#for-brands"
-                className="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-section"
+                className="mt-1 block rounded-lg px-3 py-2 text-sm text-ink hover:bg-section"
               >
                 For Brands
               </Link>

@@ -29,6 +29,23 @@ except Exception:  # noqa: BLE001
 
 _FRESH_PAGETYPES = {"price", "visa", "safety"}   # 기본 needsFreshSource=True 인 유형
 
+_TAG_STOP = {"what", "is", "the", "a", "an", "to", "from", "of", "in", "on", "at", "for", "how",
+             "do", "does", "you", "your", "my", "can", "should", "much", "are", "and", "or",
+             "with", "which", "best", "way", "get", "there", "this", "that", "i"}
+
+
+def _gen_tags(question: str, page_type: str) -> list:
+    """질문/유형에서 태그 자동 생성(데이터 기반, 하드코딩 X)."""
+    import re as _re
+    tags: list = []
+    for w in _re.findall(r"[a-z0-9]+", (question or "").lower()):
+        if len(w) >= 4 and w not in _TAG_STOP and w not in tags:
+            tags.append(w)
+    tags = tags[:5]
+    if page_type and page_type not in tags:
+        tags.append(page_type)
+    return tags[:6]
+
 
 def guess_pagetype(question: str) -> str:
     """질문 텍스트로 pageType 추정 — LLM 이 pageType 을 안 주거나 실패해도 practical 로만 쏠리지 않게."""
@@ -162,6 +179,7 @@ def _reconcile(item: dict, taxo: dict) -> dict:
         "relatedGuides": _slist(item.get("relatedGuides"), 6),
         "supportingQuestions": _slist(item.get("supportingQuestions"), 6),
         "sourceRequirements": _slist(item.get("sourceRequirements"), 4),
+        "tags": _slist(item.get("tags"), 6) or _gen_tags(question, page_type),
         "unmatched": rec is None,    # 수동 처리 플래그(클러스터 미매칭)
     }
 

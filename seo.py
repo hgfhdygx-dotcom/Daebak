@@ -67,7 +67,7 @@ def _llm_meta(question: str, synth: dict, client, cfg) -> dict:
 
 _FM_EXTRA_KEYS = ("bigCategory", "bigCategorySlug", "cluster", "clusterSlug", "pillarSlug",
                   "pillarQuestion", "questionType", "pageType", "intent", "needsFreshSource",
-                  "relatedGuides", "geoScore", "answerSummary")
+                  "relatedGuides", "geoScore", "answerSummary", "priority", "featured", "tags")
 
 
 def build_seo(question: str, synth: dict, client, cfg=None, extra: dict | None = None) -> dict:
@@ -116,6 +116,10 @@ def build_seo(question: str, synth: dict, client, cfg=None, extra: dict | None =
     for k in _FM_EXTRA_KEYS:
         if extra and k in extra and extra[k] not in (None, ""):
             frontmatter[k] = extra[k]
+    # worth_it 구조 필드(synth 가 생성했을 때만)
+    for k in ("verdict", "goodFor", "notFor", "alternatives"):
+        if synth.get(k):
+            frontmatter[k] = synth[k]
     return {
         "title": title,
         "meta_description": meta["meta_description"],

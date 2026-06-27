@@ -322,6 +322,8 @@ def run_planned(plan_id: str, cfg=None, progress_cb=None, fresh_override: bool |
         "pillarSlug": row.get("pillarSlug", ""), "pillarQuestion": row.get("pillarQuestion", ""),
         "questionType": row.get("questionType", "supporting"), "pageType": page_type,
         "intent": row.get("intent", ""),
+        "priority": row.get("priority"), "featured": bool(row.get("featured")),
+        "tags": row.get("tags") or [],
         "needsFreshSource": needs_fresh, "relatedGuides": related,
     }
     seo_out = seo_mod.build_seo(q, synth, oclient, cfg, extra=extra)

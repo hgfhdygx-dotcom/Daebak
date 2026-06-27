@@ -133,3 +133,53 @@ export function numericHighlights(post: Post, intent: string, n = 2): string[] {
   };
   return [...hl].sort((a, b) => score(a) - score(b)).slice(0, n);
 }
+
+function _titleWords(s: string): string {
+  return s.toLowerCase().split(/\s+/).filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+/** 질문 → 짧은 pill 라벨(범용, 특정 질문 하드코딩 X). intent + 핵심 토큰 조합. */
+export function createShortQuestionLabel(
+  input: Post | { question?: string; title?: string; slug?: string; pageType?: string } | string,
+): string {
+  const post = (typeof input === "string"
+    ? { question: input, title: input, slug: "" }
+    : { title: "", slug: "", ...input }) as Post;
+  const text = `${post.question || post.title || ""}`;
+  const intent = cardIntent(post);
+  const acro = (text.match(/\b([A-Z]{2,}(?:-?[A-Za-z]+)?)\b/) || [])[1] || "";
+  const modes = _modes(text.toLowerCase());
+
+  if (intent === "WORTH IT") return acro ? `${acro} worth it` : "Worth it";
+  if (intent === "CHEAPEST") return modes.length ? "Cheapest option" : "Cheapest route";
+  if (intent === "FASTEST") return "Fastest route";
+  if (intent === "TAXI COST") return "Taxi cost";
+  if (intent === "BUS COST") return "Bus cost";
+  if (intent === "LATE NIGHT") return "Late-night";
+  if (intent === "LUGGAGE FRIENDLY") return "Luggage";
+  if (intent === "PRICE") return "Price";
+  if (intent.startsWith("BEST FOR ")) return "Best for " + _titleWords(intent.slice(9));
+  if (intent === "COMPARE")
+    return modes.length >= 2 ? `${_titleWords(modes[0])} vs ${_titleWords(modes[1])}` : "Compare";
+  // 그 외(<MODE> OPTION, FAQ, …GUIDE 등) → 라벨 타이틀케이스, 너무 길면 앞 3단어
+  const tc = _titleWords(intent);
+  return tc.split(" ").slice(0, 3).join(" ");
+}
+
+/** 개요(pillar) 카드용 범위/카테고리 칩 — 가격·시간 토큰 없는 항목만(단일 숫자 절대 노출 X). */
+export function scopeChips(post: Post, n = 3): string[] {
+  const out: string[] = [];
+  const push = (s?: string) => {
+    const v = (s || "").trim();
+    if (v && !_PRICE_TOKEN.test(v) && !_TIME_TOKEN.test(v) && !out.includes(v)) out.push(v);
+  };
+  (post.highlights || []).forEach((h) => push(String(h)));
+  (post.atAGlance || []).forEach((g) => push(g?.value));
+  if (out.length === 0) {
+    _modes(`${post.question || post.title || ""}`.toLowerCase())
+      .slice(0, 3)
+      .forEach((m) => push(m.charAt(0).toUpperCase() + m.slice(1)));
+  }
+  return out.slice(0, n);
+}

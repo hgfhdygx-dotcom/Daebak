@@ -3,13 +3,15 @@ import Link from "next/link";
 // Hero 우측 "Most asked now" 카드 — compact(첫 화면을 너무 안 차지하게).
 export default function MostAsked({
   items,
+  title = "Most asked now",
 }: {
   items: { label: string; href: string }[];
+  title?: string;
 }) {
   return (
     <div className="rounded-2xl border border-line bg-surface p-4">
       <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-accent-ink">
-        Most asked now
+        {title}
       </p>
       <ul className="mt-2 divide-y divide-line">
         {items.map((it, i) => (

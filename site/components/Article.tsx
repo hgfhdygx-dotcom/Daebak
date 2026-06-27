@@ -1,7 +1,7 @@
 import Eyebrow from "@/components/Eyebrow";
 import Breadcrumb from "@/components/Breadcrumb";
 import MetaLine from "@/components/MetaLine";
-import QuickAnswer from "@/components/QuickAnswer";
+import IntentAnswer from "@/components/IntentAnswer";
 import RouteStrip from "@/components/RouteStrip";
 import ComparisonBlock from "@/components/ComparisonBlock";
 import FaqSection from "@/components/FaqSection";
@@ -42,7 +42,7 @@ export default function Article({
 
           <MetaLine updated={updated} minutes={minutes} />
 
-          <QuickAnswer post={post} />
+          <IntentAnswer post={post} />
 
           {/* 신선도 고지 — 가격·일정·규정이 바뀔 수 있는 글(§20) */}
           {post.needsFreshSource ? (

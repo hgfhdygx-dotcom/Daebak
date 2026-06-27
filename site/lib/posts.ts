@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
+import { CATEGORY_ICON_FALLBACK, CATEGORY_TINT } from "@/lib/presentation";
 
 export type Source = { url: string; domain?: string; note?: string };
 export type Faq = { q: string; a: string };
@@ -38,18 +39,29 @@ export type PostMeta = {
   needsFreshSource?: boolean;
   relatedGuides?: string[];
   geoScore?: number;
+  priority?: number;
+  featured?: boolean;
+  tags?: string[];
+  // worth_it 상세 템플릿용 선택 필드(없으면 숨김)
+  verdict?: string;
+  goodFor?: string[];
+  notFor?: string[];
+  alternatives?: string[];
 };
 
 export type Post = PostMeta & { body: string };
 
 // ── 택소노미 타입 ────────────────────────────────────────────────────
 export type ClusterQ = { question: string; slug: string };
+export type NavTopic = { label: string; href?: string; clusterSlug?: string; q?: string; icon?: string };
 export type Cluster = {
   id: string;
   title: string;
   slug: string;
   bigCategory: string;
   description?: string;
+  icon?: string;
+  featured?: boolean;
   pillarQuestions?: ClusterQ[];
   supportingQuestions?: ClusterQ[];
   faqQuestions?: ClusterQ[];
@@ -63,6 +75,12 @@ export type BigCategory = {
   title: string;
   slug: string;
   description?: string;
+  label?: string;
+  icon?: string;
+  blurb?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  navTopics?: NavTopic[];
   clusters: string[];
   status?: string;
 };
@@ -209,4 +227,111 @@ export function getRelatedPosts(slug: string, limit = 5): Post[] {
     all.filter((p) => p.bigCategorySlug === cur.bigCategorySlug).forEach((p) => add(p.slug));
   all.forEach((p) => add(p.slug));
   return out.slice(0, limit);
+}
+
+// ── 네비게이션 / 홈 / 카테고리 데이터 헬퍼 ───────────────────────────────
+export function isActiveCategory(slug: string): boolean {
+  return getActiveCategorySlugs().includes(slug);
+}
+
+// 활성 카테고리만 /[slug] 로, 그 외(빈 카테고리)는 /search 로 — 404 방지.
+export function categoryHref(cat: BigCategory): string {
+  return isActiveCategory(cat.slug) ? `/${cat.slug}` : `/search?q=${encodeURIComponent(cat.title)}`;
+}
+
+// ★ 모든 메뉴/칩/pill 링크는 이 resolver 를 통과해야 한다(404 방지):
+//   명시 href → 존재하는 cluster면 /[cat]/[cluster] → q면 /search?q= → label로 /search?q=
+export function resolveTopicHref(t: NavTopic): string {
+  if (t.href) return t.href;
+  if (t.clusterSlug) {
+    const cl = getCluster(t.clusterSlug);
+    if (cl) {
+      const cat = getCategory(cl.bigCategory);
+      return `/${cat?.slug || cl.bigCategory}/${cl.slug}`;
+    }
+  }
+  return `/search?q=${encodeURIComponent(t.q || t.label || "")}`;
+}
+
+// 카테고리의 nav 토픽: navTopics 있으면 사용, 없으면 clusters 에서 파생.
+export function getNavTopics(cat: BigCategory): NavTopic[] {
+  if (cat.navTopics && cat.navTopics.length) return cat.navTopics;
+  return getClustersOf(cat.slug).map((cl) => ({ label: cl.title, clusterSlug: cl.slug, icon: cl.icon }));
+}
+
+export type MenuCategory = {
+  slug: string;
+  title: string;
+  icon: string;
+  href: string;
+  topics: { label: string; href: string; icon?: string }[];
+};
+// 메가메뉴/모바일 accordion 데이터(모든 bigCategory). 링크는 전부 resolver 통과.
+export function getCategoryNav(): MenuCategory[] {
+  return getTaxonomy().bigCategories.map((cat) => ({
+    slug: cat.slug,
+    title: cat.title,
+    icon: cat.icon || CATEGORY_ICON_FALLBACK[cat.slug] || "products",
+    href: categoryHref(cat),
+    topics: getNavTopics(cat)
+      .slice(0, 6)
+      .map((t) => ({ label: t.label, href: resolveTopicHref(t), icon: t.icon })),
+  }));
+}
+
+export function categoryStats(catSlug: string): { live: number; soon: number; topics: number } {
+  const clusters = getClustersOf(catSlug);
+  let live = 0;
+  let soon = 0;
+  for (const cl of clusters) {
+    const c = clusterCounts(cl.slug);
+    live += c.publishedCount;
+    soon += c.draftCount;
+  }
+  const cat = getCategory(catSlug);
+  return { live, soon, topics: cat ? getNavTopics(cat).length : clusters.length };
+}
+
+// 카테고리 대표 발행 가이드 자동 선택: featured flag → priority → pillar → 최신. (제목 하드코딩 X)
+export function getFeaturedGuide(catSlug: string): Post | null {
+  const posts = getPostsByCategory(catSlug);
+  if (!posts.length) return null;
+  const score = (p: Post) =>
+    (p.featured ? 1_000_000 : 0) + (typeof p.priority === "number" ? p.priority * 1000 : 0);
+  const sorted = [...posts].sort((a, b) => {
+    const s = score(b) - score(a);
+    return s || (b.datePublished || "").localeCompare(a.datePublished || "");
+  });
+  const top = sorted[0];
+  if (!top.featured && top.priority == null) {
+    const pillar = sorted.find((p) => p.questionType === "pillar");
+    if (pillar) return pillar;
+  }
+  return top;
+}
+
+export type HomeCategory = {
+  slug: string;
+  title: string;
+  blurb: string;
+  icon: string;
+  tint: string;
+  href: string;
+  active: boolean;
+  pills: { label: string; href: string }[];
+};
+// 홈 "Browse by category" 단일 소스(taxonomy + presentation 파생). page.tsx CATEGORIES const 대체.
+export function getHomeCategories(): HomeCategory[] {
+  return getTaxonomy().bigCategories.map((cat) => ({
+    slug: cat.slug,
+    title: cat.title,
+    blurb: cat.blurb || cat.description || "",
+    icon: cat.icon || CATEGORY_ICON_FALLBACK[cat.slug] || "products",
+    tint: CATEGORY_TINT[cat.slug] || "#faf6f0",
+    href: categoryHref(cat),
+    active: isActiveCategory(cat.slug),
+    pills: getNavTopics(cat)
+      .slice(0, 5)
+      .map((t) => ({ label: t.label, href: resolveTopicHref(t) })),
+  }));
 }

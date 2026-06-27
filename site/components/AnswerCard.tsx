@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Badge from "@/components/Badge";
 import Eyebrow from "@/components/Eyebrow";
-import { cardIntent, numericHighlights, sourceTone } from "@/lib/cardIntent";
+import { cardIntent, numericHighlights, scopeChips, sourceTone } from "@/lib/cardIntent";
 import type { Post } from "@/lib/posts";
 
 function fmtDate(d?: string): string {
@@ -30,8 +30,12 @@ export default function AnswerCard({
   const featured = variant === "featured";
   const updated = post.dateModified || post.datePublished || post.lastUpdatedLabel;
   const src = sourceTone(post);
-  // 숫자 하이라이트 배지는 supporting 에서만(개요/FAQ 는 특정 숫자 노출 금지)
-  const numBadges = !isPillar && !isFaq ? numericHighlights(post, intent, 2) : [];
+  // supporting=숫자 배지 / pillar=범위 칩(단일 숫자 금지) / faq=배지 없음
+  const numBadges = isPillar
+    ? scopeChips(post, 2)
+    : !isFaq
+      ? numericHighlights(post, intent, 2)
+      : [];
 
   return (
     <Link
