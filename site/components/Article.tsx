@@ -1,88 +1,111 @@
 import Eyebrow from "@/components/Eyebrow";
+import Breadcrumb from "@/components/Breadcrumb";
 import MetaLine from "@/components/MetaLine";
-import CitationPack from "@/components/CitationPack";
+import QuickAnswer from "@/components/QuickAnswer";
+import RouteStrip from "@/components/RouteStrip";
+import ComparisonBlock from "@/components/ComparisonBlock";
 import FaqSection from "@/components/FaqSection";
+import NextQuestions from "@/components/NextQuestions";
 import RelatedAnswers from "@/components/RelatedAnswers";
+import Sidebar, { AskCta } from "@/components/Sidebar";
 import Markdown from "@/components/Markdown";
+import { extractFirstTable } from "@/lib/markdownTable";
 import { readingTime } from "@/lib/readingTime";
 import type { Post } from "@/lib/posts";
 
-// 답변 페이지 템플릿(Daebak 이식) — GEO 요소: answer-first → Citation Pack → 본문 → FAQ → 출처 → 관련.
+// 답변 페이지 — "비교하고 바로 고르는 가이드".
+// 순서: 브레드크럼 → H1 → 결론 박스 → (신선도 고지) → 경로 → 비교블록 → 상세 → 다음질문 → FAQ → 출처. 우측 sticky 사이드바(lg+).
 export default function Article({
   post,
   related = [],
+  crumbs = [],
 }: {
   post: Post;
   related?: Post[];
+  crumbs?: { name: string; href?: string }[];
 }) {
   const minutes = readingTime(`${post.citationPack?.answer ?? ""} ${post.body}`);
-  const lead = post.citationPack?.answer || post.summary || "";
   const updated = post.lastUpdatedLabel || post.dateModified || post.datePublished;
+  const { table, body } = extractFirstTable(post.body || "");
 
   return (
-    <div className="mx-auto max-w-[1120px] px-5 sm:px-8">
-      <div className="grid grid-cols-1 gap-12 py-12 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-16 lg:py-16">
+    <div className="mx-auto max-w-[1280px] px-5 py-9 sm:px-6 sm:py-12 lg:px-8">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10">
         <article className="min-w-0">
+          {crumbs.length > 0 ? <Breadcrumb items={crumbs} /> : null}
+
           <Eyebrow>Q&amp;A</Eyebrow>
 
-          {/* H1 = 질문 원문 그대로 */}
-          <h1 className="mt-3 font-display text-[clamp(2.1rem,5vw,3.4rem)] font-bold leading-[1.05] tracking-tight">
+          <h1 className="mt-3 font-display text-[clamp(1.9rem,5vw,2.9rem)] font-bold leading-[1.12] tracking-tight">
             {post.question || post.title}
           </h1>
 
-          <MetaLine author={post.author} updated={updated} minutes={minutes} />
+          <MetaLine updated={updated} minutes={minutes} />
 
-          {/* answer-first 즉답 */}
-          {lead ? (
-            <p className="mt-8 border-l-2 border-accent pl-5 text-xl leading-relaxed">
-              {lead}
+          <QuickAnswer post={post} />
+
+          {/* 신선도 고지 — 가격·일정·규정이 바뀔 수 있는 글(§20) */}
+          {post.needsFreshSource ? (
+            <p className="mt-4 rounded-xl border border-line bg-section px-4 py-3 text-sm text-ink-muted">
+              ⏱️ Prices and schedules can change.
+              {updated ? ` Last updated ${updated}.` : ""} Confirm details on the official source
+              before you travel.
             </p>
           ) : null}
 
-          {/* Citation Pack(핵심 사실 + 인용 문장) */}
-          {post.citationPack ? <CitationPack pack={post.citationPack} /> : null}
+          {post.route && post.route.length > 0 ? (
+            <RouteStrip stops={post.route} />
+          ) : null}
 
-          {/* 본문 */}
-          {post.body ? <Markdown>{post.body}</Markdown> : null}
+          {table ? <ComparisonBlock table={table} /> : null}
 
-          {/* FAQ */}
+          {body ? <Markdown>{body}</Markdown> : null}
+
+          {/* 본문 중간: 다음 질문 카드(§18) */}
+          <NextQuestions posts={related.slice(0, 4)} />
+
           {post.faq && post.faq.length > 0 ? (
             <FaqSection items={post.faq} />
           ) : null}
 
-          {/* 출처 */}
+          {/* 출처 — 작은 칩 */}
           {post.sources && post.sources.length > 0 ? (
-            <section className="mt-12 border-t border-line pt-6">
+            <section className="mt-12 border-t border-line pt-6" aria-label="Sources">
               <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
                 Sources
               </h2>
-              <ul className="mt-3 space-y-1 text-sm text-ink-muted">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {post.sources.map((s, i) => (
-                  <li key={i}>
-                    <a
-                      className="text-accent-ink underline underline-offset-2"
-                      href={s.url}
-                      target="_blank"
-                      rel="nofollow noreferrer"
-                    >
-                      {s.domain || s.url}
-                    </a>
-                  </li>
+                  <a
+                    key={i}
+                    href={s.url}
+                    target="_blank"
+                    rel="nofollow noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-ink transition-colors hover:border-accent hover:text-accent-ink"
+                  >
+                    <span aria-hidden className="text-xs">
+                      🔗
+                    </span>
+                    {s.domain || s.url}
+                  </a>
                 ))}
-              </ul>
+              </div>
             </section>
           ) : null}
 
-          {/* 모바일: 관련 답변 하단 */}
+          {/* 모바일: 문의 CTA + 관련 답변 (사이드바 대체) */}
           <div className="mt-12 lg:hidden">
+            <AskCta />
+          </div>
+          <div className="lg:hidden">
             <RelatedAnswers posts={related} />
           </div>
         </article>
 
-        {/* 데스크톱: 관련 답변 사이드바 */}
+        {/* 데스크톱: sticky 사이드바 */}
         <aside className="hidden lg:block">
-          <div className="sticky top-8">
-            <RelatedAnswers posts={related} />
+          <div className="sticky top-20">
+            <Sidebar table={table} related={related} />
           </div>
         </aside>
       </div>

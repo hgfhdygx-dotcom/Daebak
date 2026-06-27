@@ -29,7 +29,7 @@ USER_LOCATION = {"type": "approximate", "country": "KR", "city": "Seoul",
 SYNTH_MODEL = "gpt-4o"                     # 본문 합성(품질 중요)
 SEO_MODEL = "gpt-4o-mini"                  # 제목·메타·슬러그(싸게)
 SUBQ_MODEL = "gpt-4o-mini"                 # C-2 하위질문 fan-out(싸게)
-MAX_SUBQS = 4                              # 하위질문 상한(질문 그림자) — 비용 안정
+MAX_SUBQS = 6                              # 하위질문 상한(질문 그림자) — 깊이 위해 상향(비용 약간↑)
 
 # ⏱️ API 호출 타임아웃(초). 없으면 SDK 기본(최대 10분)이 멈춘 듯 잡아둠.
 API_TIMEOUT = 60
@@ -69,6 +69,30 @@ RETRY_JITTER = 0.3
 USAGE_LOG = "usage_log.json"              # 날짜별 호출 수(하루/한달 한도 계산). 지우지 마세요.
 OUTPUTS_FILE = "outputs.json"             # 생성한 글 영구 레지스트리 + 상태(생성→승인→발행)
 SETTINGS_FILE = "settings.json"           # 웹앱에서 저장한 값(자동 반영)
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  🗂️ 클러스터 CMS — 택소노미 · 기획 큐 · 리서치팩 · 배치 · GEO 검사
+#  (질문→분류→Research Pack→5개 batch→GEO 검사→발행. ai가 좋아하는 글.md = 검사 규칙)
+# ══════════════════════════════════════════════════════════════════════════
+SITE_TAXONOMY_REL = "content/taxonomy.json"   # SITE_DIR 기준. 사이트 빌드도 같은 파일을 읽음(수동 편집 영구 파일).
+PLAN_FILE = "plan.json"                        # 분류했지만 아직 생성 안 한 질문 기획 큐(plan.py)
+RESEARCH_PACK_DIR = "research_packs"           # 클러스터 단위 Research Pack 폴더(research_packs/<clusterSlug>.json)
+CLASSIFY_MODEL = "gpt-4o-mini"                 # 질문 자동 분류(싸게 — 20~30개 1콜)
+DEDUPE_MODEL = "gpt-4o-mini"                   # 중복 경계(0.40~0.55) 케이스만 yes/no 판정(싸게)
+
+# 배치 규칙(§8): 키=batch size. 20 = 기획/분류 전용 → 완성 글 생성 하드 차단.
+BATCH_SIZES = [1, 3, 5, 10, 20]
+BATCH_DEFAULT = 5
+BATCH_PLANNING_ONLY = 20                       # 이 크기로는 완성 글 생성 불가(planning only)
+
+# GEO 검사 점수 게이트(§16): ≥READY ready / ≥MINOR minor edits / 미만 rewrite. <READY면 자동발행 차단.
+GEO_READY_MIN = 90
+GEO_MINOR_MIN = 75
+
+# 리서치팩 신선도(일) — 지나면 UI가 재리서치 물음(자동 갱신 안 함)
+PACK_TTL_DAYS_DEFAULT = 30
+PACK_TTL_DAYS_SENSITIVE = 7
 
 
 # ══════════════════════════════════════════════════════════════════════════

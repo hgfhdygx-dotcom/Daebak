@@ -23,10 +23,53 @@ import re
 from datetime import datetime
 
 import config
+import research
 import usage
 from llm import KST
 
 VERIFY = "[VERIFY]"
+
+# pageType 별 BODY 섹션 골격(§14). At a glance / Quick answer / FAQ / Sources / Related / Last updated 는
+# frontmatter + 사이트가 렌더하므로 본문에 넣지 않는다 — 아래는 '본문 H2'만.
+PAGE_TYPE_SKELETONS = {
+    "route": ["Key facts", "Fastest option", "Cheapest option", "Best for hotels",
+              "Best late at night", "Step-by-step", "Good to know"],
+    "comparison": ["The options at a glance", "Best for each traveler", "Pros and cons",
+                   "Which should you choose"],
+    "price": ["Key facts", "Price range", "What affects the price", "Cheaper alternatives",
+              "Watch out"],
+    "planning": ["Recommended number of days", "Best for", "Suggested itinerary",
+                 "Mistakes to avoid"],
+    "practical": ["Key facts", "When you need it", "How to use it", "Cost"],
+    "list": ["Top options", "How to choose"],
+    "safety": ["Key facts", "Is it safe", "What to watch out for", "Practical tips"],
+    "visa": ["Key facts", "Who needs it", "How to apply", "Cost and processing time",
+             "Confirm on the official source"],
+}
+_TABLE_PAGETYPES = {"route", "comparison"}        # 옵션 비교표 필수
+_KEYFACTS_PAGETYPES = {"route", "price", "practical", "list", "safety", "visa"}  # Key facts 속성표
+
+
+def _skeleton_clause(page_type: str) -> str:
+    pt = (page_type or "practical").strip().lower()
+    sections = PAGE_TYPE_SKELETONS.get(pt, PAGE_TYPE_SKELETONS["practical"])
+    parts = [
+        f"STRUCTURE (pageType = {pt}): Write the BODY as H2 sections covering, in order: "
+        + " → ".join(sections) + ". Adapt wording to real user questions; skip a section only if the "
+        "research truly has nothing for it.",
+        "MACRO HEADING TREE: Every H2 is a real user question or its noun-phrase form; the FIRST "
+        "sentence under each H2 answers it directly and stands alone (no leading pronoun).",
+    ]
+    if pt in _TABLE_PAGETYPES:
+        parts.append("COMPARISON TABLE (required): include a Markdown table with columns "
+                     "Option | Time | Approx. price | Best for | Pros | Watch out. Put this table FIRST "
+                     "if you also add a Key facts table.")
+    if pt in _KEYFACTS_PAGETYPES:
+        parts.append("KEY FACTS TABLE (attribute dictionary): include a '## Key facts' Markdown table "
+                     "with two columns (Attribute | Value) listing the checkable specifics "
+                     "(e.g. Fastest option, Cheapest option, Approx. time, Approx. cost, Works with T-money, "
+                     "Official source). Only attributes the research supports.")
+    return " \n".join(parts)
 
 # 영어 'AI 티' 상투어 — 피할 것(드래프트 AI_TELLS 영어판)
 AI_TELLS = [
@@ -43,49 +86,151 @@ _RISKY = re.compile(
     r"\b\d{4}-\d{2}-\d{2}\b|\b(?:January|February|March|April|May|June|July|August|"
     r"September|October|November|December)\s+\d{1,2}\b)", re.I)
 
+# 가짜/미검증 URL 차단 — LLM이 example.com 등을 지어내도 무조건 제거(출처 무결성).
+_PLACEHOLDER_DOMAINS = {"example.com", "example.org", "example.net", "example.edu", "yourwebsite.com"}
+_URL_RE = re.compile(r"https?://[^\s)\]>\"']+")
+_MD_LINK_RE = re.compile(r"\[([^\]]+)\]\((https?://[^)]+)\)")
+
+
+def _url_allowed(u: str, allowed_domains: set) -> bool:
+    d = research.domain_of(u)
+    if not d or d in _PLACEHOLDER_DOMAINS:
+        return False
+    return d in allowed_domains
+
+
+def sanitize_urls(result: dict, pack: dict) -> dict:
+    """글에 등장하는 모든 URL을 '리서치가 실제로 가져온 출처 도메인'일 때만 남긴다.
+    example.com 같은 지어낸 링크는 보이는 텍스트만 남기고 제거하고, 무언가 지웠으면 verify_flag를 단다.
+    표시·스키마용 sources는 항상 실제 리서치 출처로 덮어쓴다. 절대 raise 안 함(폴백 안전)."""
+    result = result or {}
+    sources = [s for s in (pack.get("sources") or [])
+               if isinstance(s, dict) and s.get("url")]
+    allowed = {research.domain_of(s["url"]) for s in sources}
+    allowed.discard("")
+    n = [0]
+
+    def scrub(text):
+        if not isinstance(text, str) or not text:
+            return text
+
+        def _md(m):
+            if _url_allowed(m.group(2), allowed):
+                return m.group(0)
+            n[0] += 1
+            return m.group(1)
+
+        def _bare(m):
+            if _url_allowed(m.group(0), allowed):
+                return m.group(0)
+            n[0] += 1
+            return ""
+
+        text = _MD_LINK_RE.sub(_md, text)
+        text = _URL_RE.sub(_bare, text)
+        text = re.sub(r"\(\s*\)", "", text)          # 빈 괄호 정리
+        text = re.sub(r"\s*[—–-]\s*$", "", text)      # 끝에 남은 구분선 정리
+        text = re.sub(r"[ \t]{2,}", " ", text)
+        return text.strip()
+
+    if isinstance(result.get("markdown"), str):
+        result["markdown"] = scrub(result["markdown"])
+    cp = result.get("citation_pack") or {}
+    if isinstance(cp, dict):
+        cp["answer"] = scrub(cp.get("answer", ""))
+        cp["quotable"] = scrub(cp.get("quotable", ""))
+        cp["key_facts"] = [f for f in (scrub(str(x)) for x in (cp.get("key_facts") or [])) if f]
+        result["citation_pack"] = cp
+    if isinstance(result.get("faq"), list):
+        for f in result["faq"]:
+            if isinstance(f, dict) and isinstance(f.get("a"), str):
+                f["a"] = scrub(f["a"])
+    if isinstance(result.get("at_a_glance"), list):
+        for g in result["at_a_glance"]:
+            if isinstance(g, dict) and isinstance(g.get("value"), str):
+                g["value"] = scrub(g["value"])
+    if isinstance(result.get("highlights"), list):
+        result["highlights"] = [scrub(str(h)) for h in result["highlights"] if str(h).strip()]
+    result["sources"] = sources
+    if n[0]:
+        flags = list(result.get("verify_flags") or [])
+        flags.append(f"출처가 확인되지 않은 링크 {n[0]}개를 제거했어요 — 해당 사실의 공식 출처를 직접 확인/추가하세요.")
+        result["verify_flags"] = flags
+    return result
+
 
 def _now_ym() -> str:
     return datetime.now(KST).strftime("%Y-%m")
 
 
-def _system_prompt(last_updated: str) -> str:
+def _system_prompt(last_updated: str, page_type: str = "practical") -> str:
     tells = "; ".join(AI_TELLS)
     return (
         "You write English answer articles for foreigners (living in or visiting Korea) so that AI search "
         "engines (ChatGPT, Gemini, Perplexity) will CITE them. Use ONLY the facts in the provided research. "
-        "You are precise, neutral, and never invent anything.\n"
+        "You are precise, neutral, specific, and never invent anything.\n"
         "\n"
         "WRITE THE ARTICLE USING THESE PROVEN RULES (follow every one):\n"
-        "1. ANSWER-FIRST + MIRROR (D/F-2): The very first sentence directly answers the user's question, "
-        "mirroring the question's own wording. No throat-clearing, no 'In this article'.\n"
-        "2. CITATION PACK (P): Provide a top box: a one-line answer, 2-4 key facts (each with its source URL "
-        "from the research), and one short quotable sentence a person could copy verbatim.\n"
-        "3. SELF-CONTAINED CHUNKS (D-2): Every H2 section opens with a 2-4 sentence paragraph that makes full "
-        "sense out of context. Start paragraphs with concrete nouns, NOT pronouns like 'It' or 'This'.\n"
-        "4. EVIDENCE LADDER (S): Back claims with specifics from the research. Prefer verifiable facts "
-        "(dates, numbers, official sources) over adjectives. Do not stack bare adjectives.\n"
-        "5. CITATION SAFETY (E): Use ONLY facts present in the research. NEVER invent prices, fees, dates, "
-        f"deadlines, statistics, names, or awards. If a needed fact is not in the research, write the tag "
-        f"'{VERIFY}' in place and add a short note to verify_flags. Better to flag than to guess.\n"
-        "6. FAQ (C-2): End with an FAQ that answers each sub-question as a direct Q/A block (question as the "
-        "subheading, the answer in the first sentence).\n"
-        "7. HUMAN TONE: Sound like a knowledgeable human editor, NOT like AI. Avoid these AI-tell phrases: "
-        f"{tells}. No marketing fluff, no 'in conclusion'.\n"
-        "8. FRESHNESS: Treat the content as current as of " + last_updated + ".\n"
-        "\n"
-        "OUTPUT STRICT JSON ONLY with this shape:\n"
+        "1. ANSWER-FIRST + MIRROR: The very first sentence directly answers the user's question, mirroring "
+        "the question's own wording. No throat-clearing, no 'In this article'.\n"
+        "2. CITATION PACK: Provide a top box: a one-line answer; 2-4 key facts; and one short quotable "
+        "sentence a person could copy verbatim.\n"
+        "2b. AT A GLANCE: Also output at_a_glance — 2-4 tiny labeled picks a reader scans in 3 seconds "
+        "(label = 2-4 words like Fastest / Cheapest / Best for / Late night / Watch out; value = a very short "
+        "specific pick that includes the key number when relevant).\n"
+        "2c. HIGHLIGHTS: Also output highlights — 3-4 ultra-short badge phrases (1-4 words each) about the "
+        "single recommended pick (e.g. '~43 min', '₩13,000', 'No road traffic', 'Best for first-timers').\n"
+        "3. BE SPECIFIC, NOT VAGUE (most important): Use concrete, checkable specifics whenever the research "
+        "contains them — exact durations, amounts/fees, official body names, visa/category codes, step "
+        "counts, eligibility, and named exceptions. Do NOT write vague hedges like 'it varies', 'depends on "
+        "your nationality', or 'there are several options' UNLESS you immediately follow with the actual "
+        "common values (e.g. 'most US/UK/EU/AU/CA/NZ passports get 90 days visa-free; some get 30 or 60 — "
+        "check yours'). Prefer a small comparison TABLE or tight specific bullets over generic prose. Every "
+        "section must teach something concrete; cut filler. Keep paragraphs SHORT (2-3 sentences max) and "
+        "break details into bullet lists — never a wall of text. When comparing options, the table columns "
+        "should be: Option | Time | Approx. price | Best for | Pros | Watch out (use ~/approx. for prices; "
+        "write [VERIFY] for any price/time not in the research). Put 'how to decide' guidance near the TOP of "
+        "the body, and do NOT repeat in prose what the table, cards, or FAQ already say — the body is brief "
+        "supplementary notes only.\n"
+        "4. SELF-CONTAINED CHUNKS: Every H2 section opens with a 2-4 sentence paragraph that makes full sense "
+        "out of context. Start paragraphs with concrete nouns, NOT pronouns like 'It' or 'This'.\n"
+        "5. CITATION SAFETY (never guess): Use ONLY facts present in the research. NEVER invent prices, fees, "
+        f"dates, durations, deadlines, statistics, names, or awards. If a needed fact is not in the research, "
+        f"write the tag '{VERIFY}' in its place and add a short note to verify_flags. Better to flag than guess.\n"
+        "6. SOURCE URL DISCIPLINE: You are given available_sources (a list of REAL urls). A key_fact may end "
+        "with ' — <url>' ONLY when that exact url is in available_sources. NEVER invent, guess, shorten, or "
+        "placeholder a URL. NEVER use example.com / example.org / any fake URL. If you have no real source url "
+        "for a fact, write the fact with NO url. Same inside the body: never link to a url not in available_sources.\n"
+        "7. FAQ: End with an FAQ that answers each sub-question with a SPECIFIC first sentence (the concrete "
+        "answer with the actual numbers/names), not a broad restatement of the question.\n"
+        "8. EMPHASIS: In the markdown BODY only, wrap THE single most important phrase of each H2 section (the "
+        "key number, rule, or takeaway) in **markdown bold** — sparingly, ONE short phrase per section, never "
+        "whole sentences. Do NOT bold inside the title, citation_pack, or faq (those render as plain text).\n"
+        "9. FRESHNESS (do NOT stamp dates into the body): The page already shows its own 'last updated' date "
+        "separately, so NEVER write 'as of " + last_updated + "', 'as of 2026', or any current-date stamp in "
+        "the body or facts. Prefer the most recent facts in the research. For a rule that can change (visas, "
+        "fees), state it plainly and tell the reader to confirm the current rule on the cited official source. "
+        "Use a specific year ONLY for an actual past event (e.g. 'required since 2021'), never as a freshness stamp.\n"
+        "10. HUMAN TONE: Sound like a knowledgeable human editor, NOT like AI. Avoid these AI-tell phrases: "
+        f"{tells}. No marketing fluff, no 'in conclusion'.\n\n"
+        + _skeleton_clause(page_type) + "\n\n"
+        + "OUTPUT STRICT JSON ONLY with this shape:\n"
         "{\n"
         '  "title": "<concise, answer-style title, no year>",\n'
         '  "markdown": "<the article BODY in GitHub Markdown: ## H2 sections, short paragraphs, bullet '
-        'lists or a small table where useful. Do NOT include the H1 title or the citation pack or the FAQ '
-        'here — those are separate fields.>",\n'
-        '  "citation_pack": {"answer": "<one line>", "key_facts": ["<fact> — <source url>", "..."], '
-        '"quotable": "<one copy-pasteable sentence>"},\n'
-        '  "faq": [{"q": "<sub-question>", "a": "<direct first-sentence answer>"}],\n'
+        'lists, a small comparison TABLE when the question has multiple options, and where helpful ONE short '
+        "'> Tip: ...' or '> Good to know: ...' blockquote callout. Put ONE key phrase per section in **bold**. "
+        'Do NOT include the H1 title or the citation pack or the FAQ here — those are separate fields.>",\n'
+        '  "at_a_glance": [{"label": "<2-4 words: Fastest / Cheapest / Best for / Late night / Watch out>", '
+        '"value": "<very short specific pick, include the key number when relevant>"}],\n'
+        '  "highlights": ["<1-4 word badge about the recommended pick, e.g. ~43 min / ₩13,000 / No traffic>"],\n'
+        '  "citation_pack": {"answer": "<one specific line>", "key_facts": ["<specific fact'
+        '[ — <url from available_sources>]>", "..."], "quotable": "<one copy-pasteable sentence>"},\n'
+        '  "faq": [{"q": "<sub-question>", "a": "<specific direct first-sentence answer>"}],\n'
         '  "verify_flags": ["<short note of each thing the human must verify>"]\n'
         "}\n"
-        "Every key_fact should map to a source URL that appears in the research sources. If you have no "
-        "source for a fact, do not include it as a key_fact."
+        "Every key_fact url MUST appear verbatim in available_sources; if none applies, include the fact with "
+        "no url rather than inventing one."
     )
 
 
@@ -124,6 +269,8 @@ def template_markdown(question: str, pack: dict) -> dict:
             "quotable": f"{VERIFY}: quotable sentence",
         },
         "faq": faq,
+        "at_a_glance": [],
+        "highlights": [],
         "verify_flags": ["전체 본문 검토 필요(무료 폴백)"],
         "sources": sources,
         "used_llm": False,
@@ -131,7 +278,8 @@ def template_markdown(question: str, pack: dict) -> dict:
 
 
 def enforce_verify(result: dict, pack: dict) -> dict:
-    """[VERIFY] 마커가 본문에 있으면 verify_flags 보장 + 출처 없는 위험 표현 경고(비파괴)."""
+    """가짜 URL 제거(sanitize) + [VERIFY] 마커 시 verify_flags 보장 + 출처 없는 위험 표현 경고(비파괴)."""
+    result = sanitize_urls(result, pack)
     flags = list(result.get("verify_flags") or [])
     md = result.get("markdown") or ""
     cp = result.get("citation_pack") or {}
@@ -146,8 +294,9 @@ def enforce_verify(result: dict, pack: dict) -> dict:
     return result
 
 
-def synthesize(question: str, pack: dict, client, cfg=None) -> dict:
-    """증거 묶음 → 영어 글(JSON). gpt-4o 1콜. 키없음/실패 → 무료 폴백. 성공 시 bump_usage(1)."""
+def synthesize(question: str, pack: dict, client, cfg=None, page_type: str = "practical") -> dict:
+    """증거 묶음 → 영어 글(JSON). gpt-4o 1콜. 키없음/실패 → 무료 폴백. 성공 시 bump_usage(1).
+    page_type 으로 §14 섹션 골격 + 비교표/Key facts 표 요구를 프롬프트에 주입(출력 JSON 형태는 동일)."""
     cfg = cfg or config
     q = (question or "").strip()
     if client is None:
@@ -156,7 +305,7 @@ def synthesize(question: str, pack: dict, client, cfg=None) -> dict:
         last_updated = _now_ym()
         resp = client.chat.completions.create(
             model=getattr(cfg, "SYNTH_MODEL", "gpt-4o"),
-            messages=[{"role": "system", "content": _system_prompt(last_updated)},
+            messages=[{"role": "system", "content": _system_prompt(last_updated, page_type)},
                       {"role": "user", "content": _evidence_payload(q, pack)}],
             response_format={"type": "json_object"}, temperature=0.4, max_tokens=2200)
         data = json.loads(resp.choices[0].message.content or "{}")
@@ -166,6 +315,9 @@ def synthesize(question: str, pack: dict, client, cfg=None) -> dict:
             "title": str(data.get("title") or q).strip(),
             "markdown": str(data.get("markdown") or "").strip(),
             "citation_pack": data.get("citation_pack") or {},
+            "at_a_glance": [g for g in (data.get("at_a_glance") or [])
+                            if isinstance(g, dict) and g.get("label") and g.get("value")][:4],
+            "highlights": [str(h).strip() for h in (data.get("highlights") or []) if str(h).strip()][:4],
             "faq": [f for f in (data.get("faq") or []) if isinstance(f, dict) and f.get("q")],
             "verify_flags": [str(v).strip() for v in (data.get("verify_flags") or []) if str(v).strip()],
             "sources": pack.get("sources") or [],

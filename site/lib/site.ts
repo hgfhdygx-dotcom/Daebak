@@ -10,4 +10,4 @@ export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "Daebak";
 export const AUTHOR_NAME = process.env.NEXT_PUBLIC_AUTHOR_NAME || "Editorial Team";
 
 export const SITE_TAGLINE =
-  "Researched, source-cited answers for foreigners in Korea.";
+  "A local Korean's guide to Korea for foreigners — clear answers on travel, food, K-beauty, fashion, and shopping, with real prices, times, and trusted sources.";

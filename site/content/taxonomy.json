@@ -1,0 +1,295 @@
+{
+  "version": 1,
+  "note": "Daebak content taxonomy (Q&A Expansion Map). MANUALLY EDITABLE, PERMANENT. Slugs here are permanent (no year) and define hub URLs /<category> and /<category>/<cluster>. The Python pipeline (taxonomy.py) and the Next.js site both read this file. Counts (published/draft/needsUpdate) are computed live, never stored here.",
+  "bigCategories": [
+    {
+      "id": "travel",
+      "title": "Travel",
+      "slug": "travel",
+      "description": "Airports, transport, payments, stay, itineraries, seasons, safety, and day trips for travelers in Korea.",
+      "clusters": [
+        "airport-arrival",
+        "seoul-transport",
+        "tmoney-wowpass-payments",
+        "sim-esim-wifi-apps",
+        "seoul-stay-neighborhoods",
+        "korea-itinerary-trip-length",
+        "seasons-weather-packing",
+        "safety-solo-travel",
+        "language-culture-basics",
+        "busan-jeju-day-trips"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "food",
+      "title": "Food",
+      "slug": "food",
+      "description": "Korean food basics for foreigners — what to eat, how to order, dietary needs.",
+      "clusters": ["food-basics"],
+      "status": "starter"
+    },
+    {
+      "id": "shopping",
+      "title": "Shopping",
+      "slug": "shopping",
+      "description": "What to buy in Korea and where — product discovery for visitors.",
+      "clusters": ["shopping-product-discovery"],
+      "status": "starter"
+    },
+    {
+      "id": "k-beauty",
+      "title": "K-Beauty",
+      "slug": "k-beauty",
+      "description": "Korean skincare and cosmetics — coming soon.",
+      "clusters": [],
+      "status": "starter"
+    },
+    {
+      "id": "k-fashion",
+      "title": "K-Fashion",
+      "slug": "k-fashion",
+      "description": "Korean fashion and where to shop it — coming soon.",
+      "clusters": [],
+      "status": "starter"
+    },
+    {
+      "id": "korean-rules",
+      "title": "Korean Rules",
+      "slug": "korean-rules",
+      "description": "Etiquette, payments, and everyday rules in Korea — coming soon.",
+      "clusters": [],
+      "status": "starter"
+    },
+    {
+      "id": "local-places",
+      "title": "Local Places",
+      "slug": "local-places",
+      "description": "Neighborhoods, spots, and local gems — coming soon.",
+      "clusters": [],
+      "status": "starter"
+    },
+    {
+      "id": "products",
+      "title": "Products",
+      "slug": "products",
+      "description": "Beauty, fashion, snacks, and gift product guides — coming soon.",
+      "clusters": [],
+      "status": "starter"
+    }
+  ],
+  "clusters": [
+    {
+      "id": "airport-arrival",
+      "title": "Airport & Arrival",
+      "slug": "airport-arrival",
+      "bigCategory": "travel",
+      "description": "Incheon Airport, routes into Seoul, AREX, airport buses, taxis, late-night arrivals, terminals, and luggage.",
+      "priority": 1,
+      "status": "active",
+      "pillarQuestions": [
+        { "question": "How do I get from Incheon Airport to Seoul?", "slug": "incheon-airport-to-seoul" }
+      ],
+      "supportingQuestions": [
+        { "question": "What is the fastest way from Incheon Airport to Seoul?", "slug": "fastest-way-incheon-airport-to-seoul" },
+        { "question": "What is the cheapest way from Incheon Airport to Seoul?", "slug": "cheapest-way-incheon-airport-to-seoul" },
+        { "question": "Is the AREX Express train worth it?", "slug": "is-arex-express-worth-it" },
+        { "question": "AREX Express vs all-stop train — which should I take?", "slug": "arex-express-vs-all-stop-train" },
+        { "question": "How much is a taxi from Incheon Airport to Seoul?", "slug": "taxi-cost-incheon-airport-to-seoul" },
+        { "question": "How much is the airport limousine bus to Seoul?", "slug": "airport-limousine-bus-to-seoul-cost" },
+        { "question": "Incheon Airport to Myeongdong — train, bus, or taxi?", "slug": "incheon-airport-to-myeongdong" },
+        { "question": "Incheon Airport to Hongdae — train, bus, or taxi?", "slug": "incheon-airport-to-hongdae" },
+        { "question": "Incheon Airport to Gangnam — train, bus, or taxi?", "slug": "incheon-airport-to-gangnam" },
+        { "question": "Incheon Airport to Seoul Station — best route?", "slug": "incheon-airport-to-seoul-station" },
+        { "question": "What should I do if I land at Incheon after midnight?", "slug": "incheon-airport-after-midnight" },
+        { "question": "Can I take public transport from Incheon Airport late at night?", "slug": "incheon-airport-late-night-public-transport" },
+        { "question": "Where do I buy AREX tickets at Incheon Airport?", "slug": "where-to-buy-arex-tickets" },
+        { "question": "Can I use T-money for AREX?", "slug": "can-i-use-tmoney-for-arex" },
+        { "question": "Is the airport bus better than AREX for hotels?", "slug": "airport-bus-vs-arex-for-hotels" },
+        { "question": "How long does immigration take at Incheon Airport?", "slug": "incheon-airport-immigration-time" },
+        { "question": "How early should I arrive at Incheon Airport before departure?", "slug": "how-early-arrive-incheon-airport-departure" },
+        { "question": "How do I transfer between Terminal 1 and Terminal 2?", "slug": "incheon-airport-terminal-1-to-2-transfer" },
+        { "question": "Where can I store luggage at Incheon Airport?", "slug": "incheon-airport-luggage-storage" },
+        { "question": "Can I shower or sleep at Incheon Airport?", "slug": "incheon-airport-shower-sleep" }
+      ],
+      "faqQuestions": [],
+      "publishQueue": [
+        "incheon-airport-to-seoul",
+        "is-arex-express-worth-it",
+        "cheapest-way-incheon-airport-to-seoul",
+        "taxi-cost-incheon-airport-to-seoul",
+        "incheon-airport-to-myeongdong"
+      ]
+    },
+    {
+      "id": "seoul-transport",
+      "title": "Seoul Transport",
+      "slug": "seoul-transport",
+      "bigCategory": "travel",
+      "description": "Getting around Seoul — subway, buses, transfers, and apps.",
+      "priority": 2,
+      "status": "planned",
+      "pillarQuestions": [
+        { "question": "How does public transport work in Seoul?", "slug": "how-public-transport-works-in-seoul" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    },
+    {
+      "id": "tmoney-wowpass-payments",
+      "title": "T-money, WOWPASS & Payments",
+      "slug": "tmoney-wowpass-payments",
+      "bigCategory": "travel",
+      "description": "Transit cards, WOWPASS, cash, and card payments for travelers.",
+      "priority": 3,
+      "status": "planned",
+      "pillarQuestions": [
+        { "question": "What is a T-money card and how do I use it?", "slug": "what-is-tmoney-card" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    },
+    {
+      "id": "sim-esim-wifi-apps",
+      "title": "SIM, eSIM, WiFi & Apps",
+      "slug": "sim-esim-wifi-apps",
+      "bigCategory": "travel",
+      "description": "Staying connected in Korea — SIM, eSIM, pocket WiFi, and the apps you need.",
+      "priority": 4,
+      "status": "planned",
+      "pillarQuestions": [
+        { "question": "What is the best SIM or eSIM for tourists in Korea?", "slug": "best-sim-esim-korea-tourists" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    },
+    {
+      "id": "seoul-stay-neighborhoods",
+      "title": "Seoul Stay & Neighborhoods",
+      "slug": "seoul-stay-neighborhoods",
+      "bigCategory": "travel",
+      "description": "Where to stay in Seoul and which neighborhood fits your trip.",
+      "priority": 5,
+      "status": "planned",
+      "pillarQuestions": [
+        { "question": "Where should I stay in Seoul for the first time?", "slug": "where-to-stay-in-seoul-first-time" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    },
+    {
+      "id": "korea-itinerary-trip-length",
+      "title": "Korea Itinerary & Trip Length",
+      "slug": "korea-itinerary-trip-length",
+      "bigCategory": "travel",
+      "description": "How many days you need and how to plan a Korea itinerary.",
+      "priority": 6,
+      "status": "planned",
+      "pillarQuestions": [
+        { "question": "How many days do you need in Korea?", "slug": "how-many-days-in-korea" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    },
+    {
+      "id": "seasons-weather-packing",
+      "title": "Seasons, Weather & Packing",
+      "slug": "seasons-weather-packing",
+      "bigCategory": "travel",
+      "description": "Best time to visit, seasonal weather, and what to pack for Korea.",
+      "priority": 7,
+      "status": "planned",
+      "pillarQuestions": [
+        { "question": "What is the best time of year to visit Korea?", "slug": "best-time-to-visit-korea" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    },
+    {
+      "id": "safety-solo-travel",
+      "title": "Safety & Solo Travel",
+      "slug": "safety-solo-travel",
+      "bigCategory": "travel",
+      "description": "Safety, solo travel, and practical reassurance for visiting Korea.",
+      "priority": 8,
+      "status": "planned",
+      "pillarQuestions": [
+        { "question": "Is Korea safe for solo travelers?", "slug": "is-korea-safe-for-solo-travelers" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    },
+    {
+      "id": "language-culture-basics",
+      "title": "Language & Culture Basics",
+      "slug": "language-culture-basics",
+      "bigCategory": "travel",
+      "description": "Language barrier, etiquette, and culture basics for foreign travelers.",
+      "priority": 9,
+      "status": "planned",
+      "pillarQuestions": [
+        { "question": "Do I need to speak Korean to travel in Korea?", "slug": "do-i-need-korean-to-travel" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    },
+    {
+      "id": "busan-jeju-day-trips",
+      "title": "Busan, Jeju & Day Trips",
+      "slug": "busan-jeju-day-trips",
+      "bigCategory": "travel",
+      "description": "Trips beyond Seoul — Busan, Jeju, and popular day trips.",
+      "priority": 10,
+      "status": "planned",
+      "pillarQuestions": [
+        { "question": "Is Busan or Jeju worth visiting from Seoul?", "slug": "busan-or-jeju-from-seoul" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    },
+    {
+      "id": "food-basics",
+      "title": "Food Basics",
+      "slug": "food-basics",
+      "bigCategory": "food",
+      "description": "Korean food basics for first-timers — what to try and how to order.",
+      "priority": 1,
+      "status": "starter",
+      "pillarQuestions": [
+        { "question": "What Korean food should first-timers try?", "slug": "korean-food-for-first-timers" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    },
+    {
+      "id": "shopping-product-discovery",
+      "title": "Shopping & Product Discovery",
+      "slug": "shopping-product-discovery",
+      "bigCategory": "shopping",
+      "description": "What to buy in Korea and where to find it.",
+      "priority": 1,
+      "status": "starter",
+      "pillarQuestions": [
+        { "question": "What should I buy in Korea?", "slug": "what-to-buy-in-korea" }
+      ],
+      "supportingQuestions": [],
+      "faqQuestions": [],
+      "publishQueue": []
+    }
+  ],
+  "sensitiveTopics": [
+    "visa", "k-eta", "keta", "e-arrival", "arrival card", "immigration",
+    "medical", "hospital", "pharmacy", "legal", "law", "customs", "duty",
+    "safety", "emergency", "police", "covid", "vaccine", "quarantine"
+  ]
+}

@@ -10,12 +10,22 @@ check_guards/dry_run = 'LLM 호출 0' 으로 비용·한도 미리보기(geo-tra
 
 from __future__ import annotations
 
+import json
+import os
+
+import classify
 import config
+import dedupe
+import geo_check
+import linking
 import llm
 import outputs
+import plan
 import research
 import seo as seo_mod
+import storage
 import synthesis
+import taxonomy
 import usage
 
 
@@ -125,3 +135,300 @@ def run(question: str, engine: str | None = None, cfg=None, progress_cb=None) ->
 
     _p(1.0, "완료")
     return draft
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  🗂️ 배치 기획·분류 (Phase 1A) — 질문 묶음 → 분류 + 중복감지 → plan.json
+# ══════════════════════════════════════════════════════════════════════════
+def _parse_frontmatter(text: str) -> dict:
+    """MDX 상단 JSON frontmatter(--- … ---) 파싱. 실패 → {}."""
+    if not (text or "").startswith("---"):
+        return {}
+    end = text.find("\n---", 3)
+    if end == -1:
+        return {}
+    try:
+        return json.loads(text[3:end].strip())
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def existing_answers(cfg=None) -> list:
+    """중복감지 후보 = 발행된 MDX + outputs.json + plan.json 의 질문들.
+    [{slug, question, title, questionType}] (slug 기준 중복 제거)."""
+    cfg = cfg or config
+    out, seen = [], set()
+    content_dir = storage.abspath(os.path.join(
+        getattr(cfg, "SITE_DIR", "site"), getattr(cfg, "SITE_CONTENT_DIR", "content/answers")))
+    try:
+        for fn in sorted(os.listdir(content_dir)):
+            if not fn.endswith((".mdx", ".md")):
+                continue
+            try:
+                with open(os.path.join(content_dir, fn), encoding="utf-8") as f:
+                    fm = _parse_frontmatter(f.read())
+            except Exception:  # noqa: BLE001
+                fm = {}
+            slug = fm.get("slug") or fn.rsplit(".", 1)[0]
+            if slug in seen:
+                continue
+            seen.add(slug)
+            out.append({"slug": slug, "question": fm.get("question") or fm.get("title") or "",
+                        "title": fm.get("title", ""), "questionType": fm.get("questionType", "")})
+    except FileNotFoundError:
+        pass
+    for o in outputs.load_outputs():
+        s = o.get("slug")
+        if s and s not in seen:
+            seen.add(s)
+            out.append({"slug": s, "question": o.get("question", ""),
+                        "title": o.get("title", ""), "questionType": ""})
+    for p in plan.load_plan():
+        s = p.get("slug")
+        if s and s not in seen:
+            seen.add(s)
+            out.append({"slug": s, "question": p.get("question", ""),
+                        "title": p.get("title", ""), "questionType": p.get("questionType", "")})
+    return out
+
+
+def plan_batch(questions: list, cfg=None, persist: bool = True) -> list:
+    """질문 묶음 → 자동 분류(taxonomy 닫힌 집합) + 중복감지 → plan 행 목록.
+    persist=True 면 plan.json 에 저장. OpenAI 키 있으면 분류/경계중복 품질↑, 없으면 휴리스틱 폴백."""
+    cfg = cfg or config
+    qs = [str(q).strip() for q in (questions or []) if str(q).strip()]
+    if not qs:
+        return []
+    okey = llm.get_api_key_silent("openai")
+    client = llm.make_client("openai", okey) if okey else None
+    taxo = taxonomy.load()
+    rows = classify.classify_batch(qs, taxo, client, cfg)
+    cand = existing_answers(cfg)
+    for i, r in enumerate(rows):
+        others = [{"slug": x.get("slug"), "question": x.get("question"),
+                   "title": x.get("title"), "questionType": x.get("questionType")}
+                  for j, x in enumerate(rows) if j != i]
+        dups = dedupe.find_near_dupes(r.get("question", ""), cand + others, client=client, cfg=cfg)
+        r["duplicateRisk"] = dups
+        r["dedupeOf"] = next((d["slug"] for d in dups if d.get("is_dup") and d.get("slug")), "")
+    if persist:
+        rows = plan.add_batch(rows)
+    return rows
+
+
+def reconcile_row(row: dict, cfg=None) -> dict:
+    """관리 화면에서 cluster 를 바꾸면 clusterSlug/bigCategory/pillar/publishMode 재계산."""
+    taxo = taxonomy.load()
+    rec = taxonomy.resolve(row.get("bigCategory", ""), row.get("cluster", ""), taxo)
+    if rec:
+        big = taxonomy.category(rec.get("bigCategory", ""), taxo) or {}
+        pillar = taxonomy.pillar_of(rec.get("id", ""), taxo) or {"question": "", "slug": ""}
+        row["bigCategory"] = big.get("title", row.get("bigCategory", ""))
+        row["bigCategorySlug"] = big.get("slug", "")
+        row["cluster"] = rec.get("title", "")
+        row["clusterSlug"] = rec.get("slug", "")
+        row["pillarQuestion"] = pillar.get("question", "")
+        row["pillarSlug"] = pillar.get("slug", "")
+        row["publishMode"] = taxonomy.default_publish_mode(row.get("question", ""), rec, taxo)
+    else:
+        row["clusterSlug"] = ""
+    return row
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  🏭 클러스터 생성 (Phase 1B) — Research Pack 재사용 + pageType + GEO 검사 + 관련글
+# ══════════════════════════════════════════════════════════════════════════
+def ensure_cluster_pack(cluster_slug: str, engine: str | None = None, force: bool = False,
+                        cfg=None, progress_cb=None) -> dict | None:
+    """클러스터 Research Pack 확보(없거나 stale 면 빌드). pillar 질문으로 풀 리서치 1회."""
+    cfg = cfg or config
+    if not cluster_slug:
+        return None
+    taxo = taxonomy.load()
+    rec = taxonomy.cluster(cluster_slug, taxo)
+    if not rec:
+        return None
+    pack = research.load_cluster_pack(cluster_slug, cfg)
+    if pack and not force and not research.is_pack_stale(pack, cfg):
+        return pack
+    pillar = taxonomy.pillar_of(cluster_slug, taxo) or {}
+    pillar_q = pillar.get("question") or rec.get("title") or cluster_slug
+    ttl = taxonomy.ttl_days_for(rec, pillar_q)
+    return research.build_cluster_pack(rec, pillar_q, engine, ttl, cfg, progress_cb)
+
+
+def run_planned(plan_id: str, cfg=None, progress_cb=None, fresh_override: bool | None = None) -> dict:
+    """plan 행 → draft(미리보기 + 발행 재료). 팩 재사용 + delta 리서치 + pageType 합성 + GEO 검사 + 관련글.
+    발행은 안 함(publish_batch 가). plan/outputs 레저 갱신.
+    fresh_override: None=행의 needsFreshSource 따름 / False=delta 검색 생략(팩만 재사용, 저비용) — frontmatter 플래그는 유지."""
+    cfg = cfg or config
+    row = plan.get_by_id(plan_id)
+
+    def _p(frac, msg):
+        if progress_cb:
+            progress_cb(max(0.0, min(1.0, frac)), msg)
+
+    draft = {"ok": False, "error": "", "plan_id": plan_id, "question": "", "engine": "",
+             "evidence": {}, "synth": {}, "seo": {}, "geo": {}, "page_type": "practical",
+             "publishMode": "auto", "cost_spent_krw": 0.0, "verify_flags": []}
+    if not row:
+        draft["error"] = "기획 항목을 찾을 수 없습니다."
+        return draft
+
+    q = (row.get("question") or "").strip()
+    engine = getattr(cfg, "RESEARCH_ENGINE", "openai")
+    cluster_slug = row.get("clusterSlug") or ""
+    page_type = row.get("pageType") or "practical"
+    needs_fresh = bool(row.get("needsFreshSource"))         # frontmatter 플래그(고지용)
+    gather_fresh = needs_fresh if fresh_override is None else bool(fresh_override)  # delta 검색 여부
+    draft.update({"question": q, "engine": engine, "page_type": page_type,
+                  "publishMode": row.get("publishMode", "auto")})
+
+    # 1) 리서치 (팩 재사용 + delta)
+    _p(0.05, "리서치 준비…")
+    try:
+        if cluster_slug:
+            pack = ensure_cluster_pack(cluster_slug, engine, cfg=cfg,
+                                       progress_cb=lambda f, m: _p(0.05 + 0.35 * f, m))
+            evidence = research.gather_with_pack(q, pack or {}, engine, gather_fresh, cfg,
+                                                 lambda f, m: _p(0.40 + 0.15 * f, m))
+        else:
+            evidence = research.gather(q, engine, cfg, lambda f, m: _p(0.05 + 0.50 * f, m))
+    except RuntimeError as e:
+        draft["error"] = str(e)
+        return draft
+    except Exception as e:  # noqa: BLE001
+        draft["error"] = f"리서치 실패: {str(e)[:100]}"
+        return draft
+    draft["evidence"] = evidence
+
+    okey = llm.get_api_key_silent("openai")
+    oclient = llm.make_client("openai", okey) if okey else None
+
+    # 2) 합성(pageType 골격)
+    _p(0.60, "본문 합성 중…")
+    synth = synthesis.synthesize(q, evidence, oclient, cfg, page_type=page_type)
+    draft["synth"] = synth
+
+    # 3) SEO + 택소노미/관련글 frontmatter
+    _p(0.85, "제목·메타·슬러그·관련글…")
+    big_slug = row.get("bigCategorySlug") or ""
+    slug = row.get("slug") or seo_mod.slugify_no_year(synth.get("title") or q)
+    related = linking.compute_related(slug, cluster_slug, big_slug)
+    extra = {
+        "bigCategory": row.get("bigCategory", ""), "bigCategorySlug": big_slug,
+        "cluster": row.get("cluster", ""), "clusterSlug": cluster_slug,
+        "pillarSlug": row.get("pillarSlug", ""), "pillarQuestion": row.get("pillarQuestion", ""),
+        "questionType": row.get("questionType", "supporting"), "pageType": page_type,
+        "needsFreshSource": needs_fresh, "relatedGuides": related,
+    }
+    seo_out = seo_mod.build_seo(q, synth, oclient, cfg, extra=extra)
+    # 슬러그는 택소노미/기획에서 고정한 값을 우선(허브·관련글 일치 + URL 안정)
+    seo_out["slug"] = slug
+    seo_out["frontmatter"]["slug"] = slug
+    extra["answerSummary"] = seo_out.get("meta_description", "")
+    seo_out["frontmatter"]["answerSummary"] = extra["answerSummary"]
+    draft["seo"] = seo_out
+
+    # 4) GEO 검사 + 자동보정
+    report = geo_check.run_checks(synth, seo_out["frontmatter"], page_type,
+                                 duplicate_risk=row.get("duplicateRisk"), cfg=cfg)
+    corrected = report.get("corrected") or {}
+    if corrected.get("markdown"):
+        synth["markdown"] = corrected["markdown"]
+    seo_out["frontmatter"]["geoScore"] = report.get("score")
+    draft["geo"] = report
+
+    draft["cost_spent_krw"] = _cost_of(
+        engine, int(evidence.get("calls", 0)), bool(evidence.get("subqs")),
+        bool(synth.get("used_llm")), bool(seo_out.get("used_llm")))
+    draft["verify_flags"] = synth.get("verify_flags") or []
+    draft["ok"] = True
+    draft["error"] = synth.get("error") or ""
+
+    # 5) 레저 갱신
+    gate = report.get("gate", "minor")
+    new_status = "ready" if gate != "rewrite" else "generated"
+    try:
+        plan.set_status(plan_id, new_status, fields={
+            "title": seo_out.get("title", ""), "slug": slug,
+            "geoScore": report.get("score"), "answerSummary": extra["answerSummary"]})
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        outputs.upsert_generation(
+            slug=slug, question=q, title=seo_out.get("title", ""), engine=engine,
+            verify_count=len(draft["verify_flags"]),
+            meta={"bigCategory": row.get("bigCategory", ""), "bigCategorySlug": big_slug,
+                  "cluster": row.get("cluster", ""), "clusterSlug": cluster_slug,
+                  "pillarSlug": row.get("pillarSlug", ""), "pillarQuestion": row.get("pillarQuestion", ""),
+                  "questionType": row.get("questionType", ""), "pageType": page_type,
+                  "publishMode": row.get("publishMode", "auto"), "needsFreshSource": needs_fresh,
+                  "geoScore": report.get("score"), "answerSummary": extra["answerSummary"],
+                  "plan_id": plan_id})
+    except Exception:  # noqa: BLE001
+        pass
+
+    _p(1.0, "완료")
+    return draft
+
+
+def dry_run_batch(plan_ids: list, cfg=None) -> dict:
+    """배치 생성 예상 비용/차단 — LLM 호출 0. 팩 빌드 필요 여부도 반영."""
+    cfg = cfg or config
+    ids = list(plan_ids or [])
+    n = len(ids)
+    engine = getattr(cfg, "RESEARCH_ENGINE", "openai")
+    reasons = []
+    planning_only = int(getattr(cfg, "BATCH_PLANNING_ONLY", 20))
+    if n >= planning_only:
+        reasons.append(f"{planning_only}개 이상은 기획/분류 전용 — 완성 글 생성은 막혀 있어요(5개씩 나누세요).")
+
+    # 글 1편(팩 재사용): 질문검색 1~ + 합성 + SEO. + 필요한 클러스터 팩 빌드(풀 리서치 1회).
+    per_article = usage.per_call_usd(engine) * 2 + float(getattr(cfg, "SYNTH_USD_PER_CALL", 0.03)) \
+        + float(getattr(cfg, "SEO_USD_PER_CALL", 0.002))
+    clusters_needing_pack = set()
+    for pid in ids:
+        row = plan.get_by_id(pid) or {}
+        cs = row.get("clusterSlug")
+        if cs:
+            pk = research.load_cluster_pack(cs, cfg)
+            if not pk or research.is_pack_stale(pk, cfg):
+                clusters_needing_pack.add(cs)
+    pack_usd = len(clusters_needing_pack) * usage.estimate_pipeline_cost(engine)["usd"]
+    usd = n * per_article + pack_usd
+    krw = usd * float(getattr(cfg, "USD_TO_KRW", 1350))
+
+    rem = usage.remaining()
+    est_calls = n * 4 + len(clusters_needing_pack) * (2 + int(getattr(cfg, "MAX_SUBQS", 6)))
+    if rem["day"] <= 0:
+        reasons.append("오늘 호출 한도를 다 썼어요.")
+    elif rem["day"] < est_calls:
+        reasons.append(f"오늘 남은 호출({rem['day']})이 예상({est_calls})보다 적어요 — 일부만 생성될 수 있어요.")
+
+    return {"blocked": any(r.startswith(f"{planning_only}") for r in reasons), "reasons": reasons,
+            "n": n, "krw": krw, "est_calls": est_calls,
+            "packs_to_build": sorted(clusters_needing_pack)}
+
+
+def run_batch(plan_ids: list, cfg=None, progress_cb=None, fresh_override: bool | None = None) -> dict:
+    """plan_ids → 글 생성(5개씩 권장). 20개 이상은 차단(기획 전용). 한도 초과 시 부분 생성(이미 만든 건 보존).
+    fresh_override=False 면 delta 검색 생략(저비용 — 팩만 재사용)."""
+    cfg = cfg or config
+    ids = [p for p in (plan_ids or []) if p]
+    planning_only = int(getattr(cfg, "BATCH_PLANNING_ONLY", 20))
+    if len(ids) >= planning_only:
+        return {"ok": False, "error": f"{planning_only}개 이상은 기획 전용입니다 — 완성 글 생성 불가. 5개씩 나누세요.",
+                "drafts": []}
+    drafts, stopped = [], ""
+    for i, pid in enumerate(ids):
+        if usage.remaining()["day"] <= 0:
+            stopped = "오늘 호출 한도에 도달해 일부만 생성했어요."
+            break
+        if progress_cb:
+            progress_cb(i / max(1, len(ids)), f"{i+1}/{len(ids)} 글 생성 중…")
+        d = run_planned(pid, cfg, fresh_override=fresh_override)
+        drafts.append(d)
+    if progress_cb:
+        progress_cb(1.0, "배치 생성 완료")
+    return {"ok": True, "drafts": drafts, "stopped": stopped}

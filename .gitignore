@@ -5,7 +5,9 @@
 # ── 로컬 원장/로그 (개인 데이터) ──
 usage_log.json
 outputs.json
+plan.json
 settings.json
+research_packs/
 *.tmp
 
 # ── Python ──
@@ -20,3 +22,6 @@ site/.next/
 site/out/
 site/.vercel/
 npm-debug.log*
+
+# local generation staging (not for publish until reviewed)
+_review_drafts/

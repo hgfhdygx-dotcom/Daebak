@@ -1,0 +1,5 @@
+# Windows 배치 파일은 항상 CRLF로 (LF면 cmd.exe가 괄호 블록을 못 읽고 깨짐)
+*.bat text eol=crlf
+
+# 그 외 텍스트는 자동 정규화
+* text=auto

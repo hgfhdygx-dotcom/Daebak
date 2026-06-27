@@ -64,9 +64,15 @@ def _llm_meta(question: str, synth: dict, client, cfg) -> dict:
     return {"title": title, "meta_description": meta, "used_llm": True}
 
 
-def build_seo(question: str, synth: dict, client, cfg=None) -> dict:
+_FM_EXTRA_KEYS = ("bigCategory", "bigCategorySlug", "cluster", "clusterSlug", "pillarSlug",
+                  "pillarQuestion", "questionType", "pageType", "needsFreshSource",
+                  "relatedGuides", "geoScore", "answerSummary")
+
+
+def build_seo(question: str, synth: dict, client, cfg=None, extra: dict | None = None) -> dict:
     """synth → {title, meta_description, slug, frontmatter, used_llm}.
-    client=None(키없음) → 순수 파이썬 폴백. LLM 실패도 폴백."""
+    client=None(키없음) → 순수 파이썬 폴백. LLM 실패도 폴백.
+    extra: 택소노미/관련글/pageType 등 클러스터 CMS frontmatter 추가 필드(사이트가 허브/관련글에 사용)."""
     cfg = cfg or config
     q = (question or "").strip()
     if client is None:
@@ -88,7 +94,6 @@ def build_seo(question: str, synth: dict, client, cfg=None) -> dict:
         "summary": meta["meta_description"],
         "datePublished": today,
         "dateModified": today,
-        "author": getattr(cfg, "AUTHOR_NAME", "Editorial Team"),
         "lastUpdatedLabel": (synth.get("last_updated") or today[:7]),
         "sources": [{"url": s.get("url", ""), "domain": s.get("domain", "")}
                     for s in (synth.get("sources") or []) if s.get("url")][:20],
@@ -98,8 +103,17 @@ def build_seo(question: str, synth: dict, client, cfg=None) -> dict:
             "keyFacts": cp.get("key_facts", []) or [],
             "quotable": cp.get("quotable", ""),
         },
+        "atAGlance": [{"label": str(g.get("label", "")).strip()[:24],
+                       "value": str(g.get("value", "")).strip()[:80]}
+                      for g in (synth.get("at_a_glance") or [])
+                      if g.get("label") and g.get("value")][:4],
+        "highlights": [str(h).strip()[:40] for h in (synth.get("highlights") or []) if str(h).strip()][:4],
         "verifyFlags": synth.get("verify_flags") or [],
     }
+    # 클러스터 CMS 추가 필드(택소노미/관련글/pageType) — 있을 때만 frontmatter 에 실음
+    for k in _FM_EXTRA_KEYS:
+        if extra and k in extra and extra[k] not in (None, ""):
+            frontmatter[k] = extra[k]
     return {
         "title": title,
         "meta_description": meta["meta_description"],

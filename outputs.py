@@ -15,16 +15,23 @@ import storage
 
 KINDS = ("answer",)
 STATUS_LABEL = {"generated": "생성됨", "approved": "승인됨", "published": "발행됨",
-                "failed": "발행 실패", "archived": "보관"}
-STATUS_BADGE = {"generated": "🟡", "approved": "🟢", "published": "✅", "failed": "🔴", "archived": "⚪"}
+                "failed": "발행 실패", "archived": "보관", "needs_update": "갱신 필요"}
+STATUS_BADGE = {"generated": "🟡", "approved": "🟢", "published": "✅", "failed": "🔴",
+                "archived": "⚪", "needs_update": "🟠"}
 ALLOWED = {
     "generated": {"approved", "archived", "failed"},
     "approved": {"published", "generated", "archived", "failed"},
-    "published": {"archived", "failed"},
+    "published": {"archived", "failed", "needs_update"},
     "failed": {"generated", "approved", "archived"},
     "archived": {"generated", "approved"},
+    "needs_update": {"generated", "approved", "published", "archived", "failed"},
 }
-_EDITABLE = {"title", "question", "published_url", "live_url", "error", "mode", "memo", "verify_count", "engine"}
+# 클러스터 CMS 추가 필드(§10) — 발행 레코드에 함께 보관(필터/측정/허브 카운트용)
+_META_KEYS = ("bigCategory", "bigCategorySlug", "cluster", "clusterSlug", "pillarSlug",
+              "pillarQuestion", "questionType", "pageType", "publishMode", "needsFreshSource",
+              "geoScore", "answerSummary", "measurementTargets", "plan_id")
+_EDITABLE = {"title", "question", "published_url", "live_url", "error", "mode", "memo",
+             "verify_count", "engine"} | set(_META_KEYS)
 
 
 def _path() -> str:
@@ -48,8 +55,9 @@ def get_by_slug(slug: str) -> dict | None:
     return next((x for x in load_outputs() if x.get("slug") == slug), None)
 
 
-def upsert_generation(slug, question, title, engine="", verify_count=0) -> dict:
-    """생성 결과 적재(slug 로 upsert). 이미 있으면 제목/질문만 갱신·상태 안 내림(승인/발행 보존)."""
+def upsert_generation(slug, question, title, engine="", verify_count=0, meta=None) -> dict:
+    """생성 결과 적재(slug 로 upsert). 이미 있으면 제목/질문/메타 갱신·상태 안 내림(승인/발행 보존).
+    meta: 택소노미/pageType/publishMode/geoScore/measurementTargets 등 §10 추가 필드."""
     items = load_outputs()
     now = storage.now_kst().isoformat(timespec="seconds")
     rec = next((x for x in items if x.get("slug") == slug), None)
@@ -58,6 +66,9 @@ def upsert_generation(slug, question, title, engine="", verify_count=0) -> dict:
         rec["question"] = question or rec.get("question", "")
         rec["engine"] = engine or rec.get("engine", "")
         rec["verify_count"] = int(verify_count)
+        for k in _META_KEYS:
+            if meta and k in meta and meta[k] is not None:
+                rec[k] = meta[k]
         rec["updated_at"] = now
         _save(items)
         return rec
@@ -68,8 +79,15 @@ def upsert_generation(slug, question, title, engine="", verify_count=0) -> dict:
         "status": "generated", "created_at": now, "updated_at": now,
         "approved_at": "", "published_at": "", "published_url": "", "live_url": "",
         "mode": "", "memo": "", "error": "",
+        "bigCategory": "", "bigCategorySlug": "", "cluster": "", "clusterSlug": "",
+        "pillarSlug": "", "pillarQuestion": "", "questionType": "", "pageType": "",
+        "publishMode": "auto", "needsFreshSource": True, "geoScore": None,
+        "answerSummary": "", "measurementTargets": [], "plan_id": "",
         "history": [{"ts": now, "from": "", "to": "generated"}],
     }
+    for k in _META_KEYS:
+        if meta and k in meta and meta[k] is not None:
+            rec[k] = meta[k]
     items.append(rec)
     _save(items)
     return rec

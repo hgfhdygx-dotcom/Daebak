@@ -19,6 +19,22 @@ export function buildArticleLd(post: Post, url: string) {
   };
 }
 
+// Breadcrumb: Home → Category → Cluster → Article. (구조 명료성 보조 — 인용 레버는 본문.)
+export function buildBreadcrumbLd(
+  crumbs: { name: string; url: string }[],
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.name,
+      item: c.url,
+    })),
+  };
+}
+
 export function buildFaqLd(post: Post) {
   return {
     "@context": "https://schema.org",

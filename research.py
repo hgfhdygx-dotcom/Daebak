@@ -27,6 +27,23 @@ _TRACKING = {"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_conten
              "ref", "ref_src", "referrer", "fbclid", "gclid", "gclsrc", "dclid",
              "msclkid", "mc_cid", "mc_eid", "igshid", "yclid", "_hsenc", "_hsmi", "spm", "scm"}
 
+_OFFICIAL_HINTS = ("hikorea", "k-eta", "keta", "airport", "arex", "korail", "visitkorea",
+                   "mofa", "immigration", "embassy", "consulate", "gov.kr")
+
+
+def _authority_score(domain: str) -> int:
+    """출처 권위 점수(낮을수록 우선): 정부/공식 → 공식기관 → .or.kr/.edu → 기타."""
+    d = (domain or "").lower()
+    if not d:
+        return 5
+    if d.endswith(".go.kr") or ".gov" in d:
+        return 0
+    if any(h in d for h in _OFFICIAL_HINTS):
+        return 1
+    if d.endswith(".or.kr") or d.endswith(".edu"):
+        return 2
+    return 3
+
 
 # ── URL 정규화 / 도메인 ─────────────────────────────────────────────
 def clean_url(u: str) -> str:
@@ -263,10 +280,14 @@ def expand_questions(question: str, client, cfg=None) -> list:
     n = int(getattr(cfg, "MAX_SUBQS", 4))
     try:
         sysp = (
-            "You expand ONE user question that a foreigner would ask into the sub-questions that an AI "
-            "search engine would fan out internally to answer it well (query fan-out). "
-            f"Return STRICT JSON: {{\"subquestions\": [\"...\", ...]}} with {n} concise, distinct, "
-            "answer-seeking sub-questions in English. No duplicates, no numbering, no preamble."
+            "You expand ONE question a foreigner asks about Korea into the sub-questions an AI search "
+            "engine would fan out internally to answer it THOROUGHLY and SPECIFICALLY (query fan-out). "
+            f"Return STRICT JSON: {{\"subquestions\": [\"...\", ...]}} with {n} concise, DISTINCT, "
+            "answer-seeking sub-questions in English that each target CONCRETE, RETRIEVABLE facts — "
+            "exact amounts, durations, fees, official names and category/visa codes, step-by-step "
+            "procedures, eligibility, and common exceptions — and that surface the CURRENT, latest "
+            "official rules. Cover the different attribute angles a real traveler combines "
+            "(who / how much / how long / where / exceptions). No duplicates, no numbering, no preamble."
         )
         resp = client.chat.completions.create(
             model=getattr(cfg, "SUBQ_MODEL", "gpt-4o-mini"),
@@ -334,7 +355,135 @@ def gather(question: str, engine: str | None = None, cfg=None, progress_cb=None)
                 pack["sources"].append({"url": u, "domain": domain_of(u)})
         pack["queries"].append({"query": qq, "text": text[:4000], "urls": urls})
 
+    pack["sources"].sort(key=lambda s: _authority_score(s.get("domain", "")))  # 공식·정부 출처 우선
     pack["research_text"] = "\n\n".join(texts)[:9000]   # 합성 토큰 안정 — 상한
     if progress_cb:
         progress_cb(1.0, "리서치 완료")
     return pack
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  🧰 클러스터 Research Pack (Phase 1B) — pillar 풀 리서치 1회 + supporting 재사용·delta
+# ══════════════════════════════════════════════════════════════════════════
+def _pack_path(cluster_slug: str, cfg=None) -> str:
+    import os
+    import storage
+    cfg = cfg or config
+    d = getattr(cfg, "RESEARCH_PACK_DIR", "research_packs")
+    return storage.abspath(os.path.join(d, f"{cluster_slug}.mdx".replace(".mdx", ".json")))
+
+
+def load_cluster_pack(cluster_slug: str, cfg=None) -> dict | None:
+    import storage
+    if not cluster_slug:
+        return None
+    data = storage.safe_load_json(_pack_path(cluster_slug, cfg), None)
+    return data if isinstance(data, dict) and data.get("clusterSlug") else None
+
+
+def is_pack_stale(pack: dict, cfg=None) -> bool:
+    """today - lastChecked >= ttl_days 면 stale(재리서치 권장). 파싱 실패 → stale 취급."""
+    from datetime import date
+    if not pack:
+        return True
+    last = (pack.get("lastChecked") or "").strip()
+    ttl = int(pack.get("ttl_days") or getattr(cfg or config, "PACK_TTL_DAYS_DEFAULT", 30))
+    try:
+        y, m, d = (int(x) for x in last.split("-")[:3])
+        from datetime import date as _date
+        age = (date.today() - _date(y, m, d)).days
+        return age >= ttl
+    except Exception:  # noqa: BLE001
+        return True
+
+
+def build_cluster_pack(cluster_record: dict, pillar_question: str, engine: str | None = None,
+                       ttl_days: int = 30, cfg=None, progress_cb=None) -> dict:
+    """클러스터 대표(pillar) 질문으로 풀 리서치 1회 → research_packs/<clusterSlug>.json.
+    같은 클러스터의 supporting 글들이 이 팩을 재사용한다(=API 절약 핵심). 성공 호출은 gather 가 카운트."""
+    import storage
+    cfg = cfg or config
+    engine = engine or getattr(cfg, "RESEARCH_ENGINE", "openai")
+    cslug = cluster_record.get("slug", "") if cluster_record else ""
+    ev = gather(pillar_question, engine, cfg, progress_cb)
+    pack = {
+        "clusterSlug": cslug,
+        "pillarQuestion": pillar_question,
+        "engine": engine,
+        "created_at": storage.now_kst().isoformat(timespec="seconds"),
+        "lastChecked": storage.today_kst_str(),
+        "ttl_days": int(ttl_days),
+        "officialSources": ev.get("sources") or [],
+        "commonFacts": [],          # (선택) 추후 LLM 추출 — 현재는 research_text 가 사실을 운반
+        "priceRanges": {}, "timeRanges": {}, "transportOptions": [],
+        "paymentFacts": {}, "airportTerminalFacts": {},
+        "needsFreshSource": False,
+        "sourceReliabilityNotes": "",
+        "research_text": ev.get("research_text") or "",
+        "subqs_pool": ev.get("subqs") or [],
+        "covered_questions": [],
+        "errors": ev.get("errors") or [],
+    }
+    if cslug:
+        storage.safe_save_json(_pack_path(cslug, cfg), pack)
+    return pack
+
+
+def gather_with_pack(question: str, pack: dict, engine: str | None = None,
+                     needs_fresh: bool = False, cfg=None, progress_cb=None) -> dict:
+    """클러스터 팩 재사용 + 이 질문 전용 delta 검색만 → gather() 와 동일한 evidence-pack 형태 반환.
+    needs_fresh=False: 질문 1회 검색(+팩 텍스트/출처 재사용). needs_fresh=True: 추가 delta subq 검색."""
+    cfg = cfg or config
+    engine = engine or (pack or {}).get("engine") or getattr(cfg, "RESEARCH_ENGINE", "openai")
+    q = (question or "").strip()
+    out = {"question": q, "engine": engine, "subqs": [], "queries": [],
+           "sources": list((pack or {}).get("officialSources") or []),
+           "research_text": "", "calls": 0, "errors": []}
+    if not q:
+        out["errors"].append("질문이 비어 있어요.")
+        return out
+
+    key = llm.get_api_key(engine)
+    client = llm.make_client(engine, key)
+    search = engine_search_fn(engine)
+
+    # delta 질의: 질문 자체 + (needs_fresh 면) 팩에 없던 하위질문 일부
+    queries = [q]
+    if needs_fresh:
+        subq_client = client
+        if engine != "openai":
+            okey = llm.get_api_key_silent("openai")
+            subq_client = llm.make_client("openai", okey) if okey else None
+        subs = expand_questions(q, subq_client, cfg) if subq_client else []
+        pool = {s.lower() for s in ((pack or {}).get("subqs_pool") or [])}
+        delta = [s for s in subs if s.lower() not in pool][:3]
+        out["subqs"] = delta
+        queries += delta
+
+    seen_src = {s.get("url") for s in out["sources"] if isinstance(s, dict)}
+    texts = []
+    for i, qq in enumerate(queries):
+        if progress_cb:
+            progress_cb(i / max(1, len(queries)), f"추가 리서치 {i+1}/{len(queries)}…")
+        payload, _a, err = run_one_search(search, client, qq)
+        if payload is None:
+            out["errors"].append(f"검색 실패: {str(err)[:80]}")
+            continue
+        usage.bump_usage(1)
+        out["calls"] += 1
+        text = (payload.get("text") or "").strip()
+        urls = [u for u in (clean_url(u) for u in (payload.get("urls") or []) if u) if u]
+        if text:
+            texts.append(f"### Research for: {qq}\n{text}")
+        for u in urls:
+            if u not in seen_src:
+                seen_src.add(u)
+                out["sources"].append({"url": u, "domain": domain_of(u)})
+        out["queries"].append({"query": qq, "text": text[:4000], "urls": urls})
+
+    out["sources"].sort(key=lambda s: _authority_score(s.get("domain", "")))
+    base = (pack or {}).get("research_text") or ""
+    out["research_text"] = ("\n\n".join(texts) + ("\n\n" + base if base else ""))[:9000]
+    if progress_cb:
+        progress_cb(1.0, "리서치 완료")
+    return out

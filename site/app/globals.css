@@ -2,17 +2,21 @@
 @plugin "@tailwindcss/typography";
 
 /* ─────────────────────────────────────────────────────────────
-   디자인 토큰 (에디토리얼/매거진 · 흰 배경 · 넉넉한 여백) — Daebak에서 이식.
-   포인트 컬러는 단 하나(Vermilion 단청 #E4502B).
+   Daebak 디자인 시스템 (전역 고정) — 밝고 깨끗한 정보 플랫폼.
+   전체는 거의 흰색(따뜻한 아이보리), 포인트 코랄은 버튼·링크·CTA·소량 뱃지에만.
+   표는 중립(헤더만 아주 연한 회색). 이 토큰이 모든 글·카테고리·제품 페이지에 적용됨.
    ───────────────────────────────────────────────────────────── */
 @theme {
-  --color-bg: #ffffff;
-  --color-surface: #faf9f6;
-  --color-ink: #17150f;
-  --color-ink-muted: #6b665e;
-  --color-line: #e7e3da;
-  --color-accent: #e4502b;
-  --color-accent-ink: #b83d1e;
+  --color-bg: #fffcf8;          /* 페이지: 거의 흰색 따뜻한 아이보리 */
+  --color-surface: #ffffff;     /* 카드: 흰색 */
+  --color-section: #faf6f0;     /* 섹션 밴드: 아주 연한 크림 */
+  --color-th: #f4f2ee;          /* 표 헤더: 아주 연한 중립 */
+  --color-ink: #161616;         /* 본문 */
+  --color-ink-muted: #6f675e;   /* meta·캡션 */
+  --color-line: #eae4db;        /* 연한 베이지그레이 보더 */
+  --color-accent: #e8483c;      /* 포인트 코랄레드 — 버튼·링크·CTA·소량 (로고 빨강과 근접) */
+  --color-accent-ink: #c13320;  /* 코랄 텍스트/대비 */
+  --color-trust: #2563eb;       /* 신뢰 블루 — 소량 */
 
   --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -38,4 +42,15 @@ body {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 2px;
+}
+
+/* 본문 강조: **bold** → 코랄 밑줄 마커(답변 본문 .prose-marker에만). */
+.prose-marker :where(strong):not(:where(a strong, a *)) {
+  color: var(--color-accent-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  text-decoration-thickness: 0.18em;
+  text-underline-offset: 0.12em;
+  text-decoration-skip-ink: none;
 }
