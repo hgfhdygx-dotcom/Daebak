@@ -9,6 +9,7 @@ import JsonLd from "@/components/JsonLd";
 import {
   categoryStats,
   clusterCounts,
+  clusterFeaturedQuestion,
   getActiveCategorySlugs,
   getCategory,
   getClustersOf,
@@ -95,7 +96,13 @@ export default async function CategoryPage({
         <section className="mt-8">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {liveClusters.map((cl) => (
-              <ClusterCard key={cl.id} cluster={cl} categorySlug={cat.slug} counts={clusterCounts(cl.slug)} />
+              <ClusterCard
+                key={cl.id}
+                cluster={cl}
+                categorySlug={cat.slug}
+                counts={clusterCounts(cl.slug)}
+                featuredQuestion={clusterFeaturedQuestion(cl.slug)}
+              />
             ))}
           </div>
         </section>

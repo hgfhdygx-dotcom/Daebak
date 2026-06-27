@@ -4,14 +4,25 @@
 import type { Post } from "@/lib/posts";
 
 // ── 의도 키워드 규칙(위에서부터 첫 매치). EN + KR 방어적 매칭. ──
+// 순서 = 우선순위(고정). 거래 의도(worth/cheapest/fastest/where-buy/what-buy) → best/first-timer →
+// 상황(late night/luggage/watch out) → 카테고리류(food/beauty/fashion)는 마지막.
+// where/what-to-buy 가 카테고리류보다 위, BEST PICK 이 beauty/fashion/food 보다 위
+// ("Best Korean sunscreen" → BEST PICK, "Where to buy sunscreen" → WHERE TO BUY).
 export type IntentRule = { label: string; re: RegExp };
 export const INTENT_RULES: IntentRule[] = [
   { label: "WORTH IT", re: /\bworth (it|the|a)\b|is it worth|값어치|가치(가| )?있|탈\s*만/i },
   { label: "CHEAPEST", re: /\b(cheapest|cheaper|cheap|budget|low[-\s]?cost|save money)\b|저렴|가성비|최저/i },
   { label: "FASTEST", re: /\b(fastest|quickest)\b|가장\s*빠른|최단\s*시간/i },
+  { label: "WHERE TO BUY", re: /\bwhere (to|can i|do i) (buy|get|find|purchase|shop)\b|어디서\s*(사|파|구입|구매)/i },
+  { label: "WHAT TO BUY", re: /\bwhat (to|should i) (buy|get|bring back)\b|\bwhat to buy\b|뭐(를)?\s*(사|살)|무엇을\s*사|사야\s*할/i },
+  { label: "BEST PICK", re: /\b(best|top|recommended|recommend|must[-\s]?(try|buy|visit|eat))\b|추천|베스트|최고/i },
+  { label: "FIRST-TIMER", re: /\b(first[-\s]?time|first[-\s]?timer|beginner|newbie|never been)\b|처음|초보|입문/i },
   { label: "LATE NIGHT", re: /\b(late[-\s]?night|after midnight|overnight|last train|first train|red[-\s]?eye)\b|심야|새벽|막차|첫차/i },
   { label: "LUGGAGE FRIENDLY", re: /\b(luggage|suitcase|baggage|bags?)\b|짐|캐리어|수하물/i },
   { label: "WATCH OUT", re: /\b(scam|danger|dangerous|avoid|warning|rip[-\s]?off)\b|주의|조심|사기|바가지/i },
+  { label: "FOOD GUIDE", re: /\b(restaurant|eat|eating|food|dish|dishes|meal|menu|what to order|bbq|street food|caf[eé])\b|맛집|먹을|음식|메뉴|식당/i },
+  { label: "BEAUTY PICK", re: /\b(skincare|sunscreen|cosmetics?|makeup|serum|toner|k[-\s]?beauty|olive young)\b|화장품|스킨케어|선크림|뷰티/i },
+  { label: "FASHION GUIDE", re: /\b(fashion|clothes|clothing|outfits?|streetwear|apparel|sizing)\b|패션|의류|옷|브랜드/i },
 ];
 
 const _MODE_RE = /\b(train|subway|metro|bus|limousine|taxi|cab|ferry|walk|car|bike|cycle|flight)\b|기차|지하철|버스|택시|리무진/gi;
@@ -154,6 +165,13 @@ export function createShortQuestionLabel(
   if (intent === "WORTH IT") return acro ? `${acro} worth it` : "Worth it";
   if (intent === "CHEAPEST") return modes.length ? "Cheapest option" : "Cheapest route";
   if (intent === "FASTEST") return "Fastest route";
+  if (intent === "WHERE TO BUY") return "Where to buy";
+  if (intent === "WHAT TO BUY") return "What to buy";
+  if (intent === "BEST PICK") return "Best picks";
+  if (intent === "FIRST-TIMER") return "First-timer";
+  if (intent === "FOOD GUIDE") return "Food guide";
+  if (intent === "BEAUTY PICK") return "Beauty pick";
+  if (intent === "FASHION GUIDE") return "Fashion";
   if (intent === "TAXI COST") return "Taxi cost";
   if (intent === "BUS COST") return "Bus cost";
   if (intent === "LATE NIGHT") return "Late-night";

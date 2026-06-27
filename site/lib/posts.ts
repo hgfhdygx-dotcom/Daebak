@@ -47,6 +47,13 @@ export type PostMeta = {
   goodFor?: string[];
   notFor?: string[];
   alternatives?: string[];
+  // 의도별 상세 템플릿용 선택 필드(없으면 숨김 — 재생성 시 채워짐)
+  priceFactors?: string[];   // PriceFirst: 가격 변동 요인
+  steps?: string[];          // Steps: 단계
+  topPick?: string;          // Recommendation: 대표 추천
+  criteria?: string[];       // Recommendation: 추천 기준
+  buyLocations?: string[];   // Buying: 구매처
+  productGroups?: string[];  // Buying: 상품군
 };
 
 export type Post = PostMeta & { body: string };
@@ -308,6 +315,36 @@ export function getFeaturedGuide(catSlug: string): Post | null {
     if (pillar) return pillar;
   }
   return top;
+}
+
+// 사이트 전체 대표 발행 가이드(홈 Featured) — 활성 카테고리들의 발행글 중 featured→priority→pillar→최신.
+// (이전엔 홈이 최신글 posts[0] 를 썼다 — priority/featured 무시 버그. 이제 대표글을 자동 선택.)
+export function getSiteFeatured(): Post | null {
+  const posts = getAllPosts();
+  if (!posts.length) return null;
+  const score = (p: Post) =>
+    (p.featured ? 1_000_000 : 0) +
+    (typeof p.priority === "number" ? p.priority * 1000 : 0) +
+    (p.questionType === "pillar" ? 100 : 0);
+  return [...posts].sort(
+    (a, b) => score(b) - score(a) || (b.datePublished || "").localeCompare(a.datePublished || ""),
+  )[0];
+}
+
+// 클러스터의 대표 "발행" 질문(R1) — live 카드가 실제 발행 질문을 보여주도록. 발행글 없으면 taxonomy pillar 질문 폴백.
+export function clusterFeaturedQuestion(clusterSlug: string): string {
+  const published = getPostsByCluster(clusterSlug);
+  if (published.length) {
+    const score = (p: Post) =>
+      (p.featured ? 1_000_000 : 0) +
+      (typeof p.priority === "number" ? p.priority * 1000 : 0) +
+      (p.questionType === "pillar" ? 100 : 0);
+    const top = [...published].sort(
+      (a, b) => score(b) - score(a) || (b.datePublished || "").localeCompare(a.datePublished || ""),
+    )[0];
+    return top.question || top.title || "";
+  }
+  return getCluster(clusterSlug)?.pillarQuestions?.[0]?.question || "";
 }
 
 export type HomeCategory = {

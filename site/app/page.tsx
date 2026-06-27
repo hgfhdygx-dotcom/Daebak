@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getAllPosts, getHomeCategories } from "@/lib/posts";
+import { getAllPosts, getHomeCategories, getSiteFeatured } from "@/lib/posts";
 import AnswerCard from "@/components/AnswerCard";
 import CategoryCard from "@/components/CategoryCard";
 import PopularGuides from "@/components/PopularGuides";
@@ -58,7 +58,7 @@ const TRUST = ["Local perspective", "Updated guides", "Cited sources"];
 
 export default function Home() {
   const posts = getAllPosts();
-  const featured = posts[0];
+  const featured = getSiteFeatured(); // 대표글(featured/priority 우선) — 최신글이 아님
   const popular = posts.filter((p) => p.slug !== featured?.slug).slice(0, 4);
   const homeCats = getHomeCategories();
   const popularNow = posts.slice(0, 4).map((p) => ({
@@ -148,7 +148,7 @@ export default function Home() {
       {/* ── Browse by category (hover 시 하위분류 pill) ── */}
       <section id="categories" className="mt-10 scroll-mt-20">
         <h2 className="font-display text-lg font-bold tracking-tight">Browse Korea by category</h2>
-        <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
           {homeCats.map((c) => (
             <CategoryCard key={c.slug} cat={c} />
           ))}

@@ -12,15 +12,17 @@ export default function ClusterCard({
   cluster,
   categorySlug,
   counts,
+  featuredQuestion,
 }: {
   cluster: Cluster;
   categorySlug: string;
   counts: { publishedCount: number; draftCount: number };
+  featuredQuestion?: string; // 실제 발행 질문 우선(R1) — 없으면 taxonomy pillar 질문 폴백
 }) {
   const href = `/${categorySlug}/${cluster.slug}`;
   const live = counts.publishedCount;
   const soon = counts.draftCount;
-  const featuredQ = cluster.pillarQuestions?.[0]?.question;
+  const featuredQ = featuredQuestion || cluster.pillarQuestions?.[0]?.question;
   const pills = (cluster.supportingQuestions ?? [])
     .slice(0, 3)
     .map((q) => createShortQuestionLabel({ question: q.question }));

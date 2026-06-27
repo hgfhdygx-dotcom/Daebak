@@ -23,13 +23,24 @@ export default function CategoryCard({ cat }: { cat: HomeCategory }) {
       </Link>
 
       {cat.pills.length ? (
-        <div className="flex flex-wrap gap-1.5 overflow-hidden opacity-100 transition-all duration-200 sm:max-h-0 sm:opacity-0 sm:group-hover:max-h-24 sm:group-hover:opacity-100 sm:group-focus-within:max-h-24 sm:group-focus-within:opacity-100">
-          {cat.pills.map((p, i) => (
-            <Chip key={i} href={p.href} className="bg-white/70 text-[0.7rem]">
-              {p.label}
-            </Chip>
-          ))}
-        </div>
+        <>
+          {/* 모바일: 최대 3개만 상시 노출 */}
+          <div className="flex flex-wrap gap-1.5 sm:hidden">
+            {cat.pills.slice(0, 3).map((p, i) => (
+              <Chip key={i} href={p.href} className="bg-white/70 text-[0.7rem]">
+                {p.label}
+              </Chip>
+            ))}
+          </div>
+          {/* 데스크탑: hover/focus 시 전체 펼침 */}
+          <div className="hidden overflow-hidden opacity-0 transition-all duration-200 sm:flex sm:max-h-0 sm:flex-wrap sm:gap-1.5 sm:group-hover:max-h-24 sm:group-hover:opacity-100 sm:group-focus-within:max-h-24 sm:group-focus-within:opacity-100">
+            {cat.pills.map((p, i) => (
+              <Chip key={i} href={p.href} className="bg-white/70 text-[0.7rem]">
+                {p.label}
+              </Chip>
+            ))}
+          </div>
+        </>
       ) : null}
     </div>
   );

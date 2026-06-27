@@ -102,19 +102,26 @@ def _intent_clause(question: str) -> str:
                 "vague 'good for speed and comfort'. ALSO output JSON fields: verdict (one sentence), goodFor (2-4), "
                 "notFor (1-3), alternatives (0-3).")
     if re.search(r"cheapest|cheaper|budget|저렴", q):
-        return "INTENT = CHEAPEST: lead with the price and the cheapest pick; note the trade-off vs faster/comfier options."
+        return ("INTENT = CHEAPEST: lead with the price and the cheapest pick; note the trade-off vs "
+                "faster/comfier options. ALSO output JSON field priceFactors (1-4 short notes on what makes "
+                "the price vary).")
     if re.search(r"fastest|quickest|빠른", q):
         return "INTENT = FASTEST: lead with the travel time; name the fastest option and when it isn't worth it."
     if re.search(r"how much|cost|price|fare|요금|얼마", q):
-        return "INTENT = COST: give the price RANGE and what makes it vary (distance, time of day, surcharges)."
+        return ("INTENT = COST: give the price RANGE and what makes it vary (distance, time of day, "
+                "surcharges). ALSO output JSON field priceFactors (1-4 short notes on what changes the price).")
     if re.search(r"\bbest\b|recommend|추천", q):
-        return "INTENT = BEST: give the recommendation CRITERIA (for whom / when), not just one pick."
+        return ("INTENT = BEST: give the recommendation CRITERIA (for whom / when), not just one pick. ALSO "
+                "output JSON fields topPick (one short line naming the pick) and criteria (2-4 how-to-choose notes).")
     if re.search(r"how (do|to)\b|방법", q):
-        return "INTENT = HOW-TO: answer as clear steps or a short decision list."
+        return ("INTENT = HOW-TO: answer as clear steps or a short decision list. ALSO output JSON field "
+                "steps (2-6 short imperative steps in order).")
     if re.search(r"where to buy|어디서 사", q):
-        return "INTENT = WHERE-TO-BUY: name store types, online options, and locations."
+        return ("INTENT = WHERE-TO-BUY: name store types, online options, and locations. ALSO output JSON "
+                "field buyLocations (2-5 store types / places).")
     if re.search(r"what to buy|뭐 사|뭐 살", q):
-        return "INTENT = WHAT-TO-BUY: recommend product CATEGORIES (not one item's exact price)."
+        return ("INTENT = WHAT-TO-BUY: recommend product CATEGORIES (not one item's exact price). ALSO output "
+                "JSON field productGroups (2-5 product categories).")
     return ""
 
 # 영어 'AI 티' 상투어 — 피할 것(드래프트 AI_TELLS 영어판)
@@ -281,7 +288,12 @@ def _system_prompt(last_updated: str, page_type: str = "practical",
         '  "faq": [{"q": "<sub-question>", "a": "<specific direct first-sentence answer>"}],\n'
         '  "verify_flags": ["<short note of each thing the human must verify>"],\n'
         '  "verdict": "<ONLY for worth-it/should-I questions: Yes / No / It depends + one short line; omit otherwise>",\n'
-        '  "goodFor": ["<who it suits>"], "notFor": ["<who should skip it>"], "alternatives": ["<the main alternative>"]\n'
+        '  "goodFor": ["<who it suits>"], "notFor": ["<who should skip it>"], "alternatives": ["<the main alternative>"],\n'
+        '  "priceFactors": ["<cheapest/cost only: what makes the price vary; omit otherwise>"],\n'
+        '  "steps": ["<how-to only: short ordered steps; omit otherwise>"],\n'
+        '  "topPick": "<best/recommend only: one short pick; omit otherwise>", "criteria": ["<best only: how to choose>"],\n'
+        '  "buyLocations": ["<where-to-buy only: store types/places; omit otherwise>"],\n'
+        '  "productGroups": ["<what-to-buy only: product categories; omit otherwise>"]\n'
         "}\n"
         "Every key_fact url MUST appear verbatim in available_sources; if none applies, include the fact with "
         "no url rather than inventing one."
@@ -380,6 +392,12 @@ def synthesize(question: str, pack: dict, client, cfg=None, page_type: str = "pr
             "goodFor": [str(x).strip() for x in (data.get("goodFor") or []) if str(x).strip()][:4],
             "notFor": [str(x).strip() for x in (data.get("notFor") or []) if str(x).strip()][:3],
             "alternatives": [str(x).strip() for x in (data.get("alternatives") or []) if str(x).strip()][:3],
+            "priceFactors": [str(x).strip() for x in (data.get("priceFactors") or []) if str(x).strip()][:4],
+            "steps": [str(x).strip() for x in (data.get("steps") or []) if str(x).strip()][:6],
+            "topPick": str(data.get("topPick") or "").strip(),
+            "criteria": [str(x).strip() for x in (data.get("criteria") or []) if str(x).strip()][:4],
+            "buyLocations": [str(x).strip() for x in (data.get("buyLocations") or []) if str(x).strip()][:5],
+            "productGroups": [str(x).strip() for x in (data.get("productGroups") or []) if str(x).strip()][:5],
             "sources": pack.get("sources") or [],
             "last_updated": last_updated,
             "used_llm": True,
