@@ -134,11 +134,9 @@ with tab_quick:
 
     st.subheader("③ 예상 비용 확인 (무료)")
     guard = pipeline.dry_run(question or "(질문 예시)", config)
-    rem, est = guard["remaining"], guard["estimate"]
-    c1, c2 = st.columns(2)
-    c1.metric("이 글 예상 비용", f"약 {est['krw']:,.0f}원",
+    est = guard["estimate"]
+    st.metric("이 글 예상 비용", f"약 {est['krw']:,.0f}원",
               help=f"검색 {est['search_calls']}회 등 총 {est['total_calls']}회 호출")
-    c2.metric("남은 한도", f"오늘 {rem['day']}회 · 이번 달 {rem['month']}회")
     if guard["blocked"]:
         for r in guard["reasons"]:
             st.error("⛔ " + r)
@@ -210,9 +208,7 @@ with tab_quick:
                     if u:
                         st.markdown(f"- [{s.get('domain') or u}]({u})")
 
-            cc1, cc2 = st.columns(2)
-            cc1.metric("이 글에 쓴 비용", f"약 {draft.get('cost_spent_krw', 0):,.0f}원")
-            cc2.metric("남은 한도", f"오늘 {usage.remaining()['day']}회")
+            st.metric("이 글에 쓴 비용", f"약 {draft.get('cost_spent_krw', 0):,.0f}원")
 
             with st.expander("🔧 SEO 메타 / frontmatter"):
                 st.write({"title": seo.get("title"), "slug": seo.get("slug"),

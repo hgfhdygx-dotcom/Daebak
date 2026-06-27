@@ -38,13 +38,14 @@ def check_guards(question: str = "", cfg=None) -> dict:
     cap = float(getattr(cfg, "MAX_COST_PER_RUN_KRW", 0) or 0)
     if cap and est["krw"] > cap:
         reasons.append(f"예상 비용 {est['krw']:,.0f}원이 1회 상한 {cap:,.0f}원을 넘어요.")
-    if rem["day"] <= 0:
-        reasons.append(f"오늘 호출 한도({getattr(cfg,'DAILY_LIMIT',50)}회)를 다 썼어요.")
-    if rem["month"] <= 0:
-        reasons.append(f"이번 달 호출 한도({getattr(cfg,'MONTHLY_LIMIT',1000)}회)를 다 썼어요.")
-    # 한도가 남았는지(이번 글 예상 호출 수만큼)
-    if 0 < rem["day"] < est["total_calls"]:
-        reasons.append(f"오늘 남은 호출({rem['day']}회)이 이 글 예상({est['total_calls']}회)보다 적어요.")
+    if getattr(cfg, "ENFORCE_CALL_LIMITS", False):
+        if rem["day"] <= 0:
+            reasons.append(f"오늘 호출 한도({getattr(cfg,'DAILY_LIMIT',50)}회)를 다 썼어요.")
+        if rem["month"] <= 0:
+            reasons.append(f"이번 달 호출 한도({getattr(cfg,'MONTHLY_LIMIT',1000)}회)를 다 썼어요.")
+        # 한도가 남았는지(이번 글 예상 호출 수만큼)
+        if 0 < rem["day"] < est["total_calls"]:
+            reasons.append(f"오늘 남은 호출({rem['day']}회)이 이 글 예상({est['total_calls']}회)보다 적어요.")
     return {"blocked": bool(reasons), "reasons": reasons, "estimate": est, "remaining": rem}
 
 
@@ -426,7 +427,7 @@ def run_batch(plan_ids: list, cfg=None, progress_cb=None, fresh_override: bool |
                 "drafts": []}
     drafts, stopped = [], ""
     for i, pid in enumerate(ids):
-        if usage.remaining()["day"] <= 0:
+        if getattr(cfg, "ENFORCE_CALL_LIMITS", False) and usage.remaining()["day"] <= 0:
             stopped = "오늘 호출 한도에 도달해 일부만 생성했어요."
             break
         if progress_cb:
