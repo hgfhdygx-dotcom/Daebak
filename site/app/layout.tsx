@@ -35,7 +35,7 @@ function SiteHeader() {
   const navOrdered = groupByMenu(nav).flatMap((g) => g.cats); // 모바일도 데스크탑과 같은 그룹 순서
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-4 px-5 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-14 max-w-[1760px] items-center gap-4 px-5 sm:px-6 lg:px-8">
         {/* 왼쪽: 브랜드 + 만든이 + 메뉴 */}
         <div className="flex items-center gap-5">
           <div className="flex items-center leading-none">
@@ -137,7 +137,7 @@ function SiteHeader() {
 function SiteFooter() {
   return (
     <footer className="mt-16 border-t border-line">
-      <div className="mx-auto max-w-[1600px] px-5 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1760px] px-5 py-10 sm:px-6 lg:px-8">
         <p className="font-display text-base font-semibold text-ink">
           {SITE_NAME}
         </p>

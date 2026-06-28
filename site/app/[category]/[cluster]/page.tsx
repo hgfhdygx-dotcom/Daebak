@@ -78,7 +78,7 @@ export default async function ClusterPage({
   const pubIconAt = (i: number) => articleIcons[(pillar ? 1 : 0) + i];
 
   return (
-    <div className="mx-auto max-w-[1600px] px-5 py-7 sm:px-6 sm:py-10 lg:px-8">
+    <div className="mx-auto max-w-[1760px] px-5 py-7 sm:px-6 sm:py-10 lg:px-8">
       <JsonLd
         data={buildBreadcrumbLd([
           { name: "Home", url: SITE_URL },
