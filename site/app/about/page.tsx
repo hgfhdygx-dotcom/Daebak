@@ -48,6 +48,20 @@ export default function AboutPage() {
           We keep answers current and revise them when the underlying facts change.
           We never publish fabricated reviews, awards, or claims.
         </p>
+
+        <h2>Images &amp; visuals</h2>
+        <p>
+          {SITE_NAME} uses{" "}
+          <a href="https://unsplash.com/?utm_source=daebak&utm_medium=referral" target="_blank" rel="noreferrer">
+            Unsplash
+          </a>{" "}
+          photos as supporting visuals for major categories and topic clusters —
+          such as Travel, Food, K-Beauty, Shopping, Airport &amp; Arrival, and Seoul
+          Transport. Small Q&amp;A answer cards do not use large photos by default.
+          Each image is chosen through our admin Image Manager, hotlinked from
+          Unsplash, and shown with photographer attribution (&ldquo;Photo by
+          [photographer] on Unsplash&rdquo;) next to where it appears.
+        </p>
       </div>
     </div>
   );

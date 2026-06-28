@@ -1,4 +1,6 @@
 import SmartThumbnail from "@/components/SmartThumbnail";
+import Attribution from "@/components/Attribution";
+import { getApprovedVisual } from "@/lib/visuals";
 import type { Post } from "@/lib/posts";
 
 // 카테고리 허브 Hero — LABEL + heroTitle + subtitle + stats(live/soon/topics) + 우측 compact 비주얼(bigCategory 레벨).
@@ -25,8 +27,8 @@ export default function CategoryHero({
   const visual = {
     title,
     bigCategorySlug: categorySlug,
-    imageKey: visualKey,
   } as Post;
+  const approved = getApprovedVisual("bigCategory", categorySlug); // 승인된 Unsplash 사진(있으면 hotlink)
 
   return (
     <section className="relative mt-4 overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-surface to-section px-5 py-7 sm:px-8 sm:py-9">
@@ -58,15 +60,16 @@ export default function CategoryHero({
         </div>
 
         {/* 우측 compact 비주얼 — 모바일은 숨김(텍스트 우선), 데스크탑만 */}
-        <div className="hidden shrink-0 sm:block">
+        <div className="relative hidden w-44 shrink-0 overflow-hidden rounded-2xl border border-line shadow-card sm:block lg:w-52">
           <SmartThumbnail
             post={visual}
+            visual={approved}
             aspect="4/3"
             level="bigCategory"
             iconKind={icon}
             tint={tint}
-            className="w-44 rounded-2xl border border-line shadow-card lg:w-52"
           />
+          {approved ? <Attribution visual={approved} className="absolute bottom-1.5 right-1.5 z-10" /> : null}
         </div>
       </div>
     </section>

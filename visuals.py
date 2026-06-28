@@ -1,214 +1,267 @@
 # -*- coding: utf-8 -*-
 """
-visuals.py — 카테고리/클러스터 대표 이미지 자동 수급 (Pexels)
-============================================================
-큰 카테고리(bigCategory) + 중간 카테고리(cluster)의 visualKey 만 대상으로,
-Pexels(무료·상업적·출처표기 불필요)에서 관련 사진 1장씩 받아 site/public/<레지스트리 src> 에 저장.
-작은 Q&A(article) 카드는 대상이 아님(아이콘 폴백). 받은 건 로컬 파일 → 런타임 외부 URL 0(상업적 안전).
-
-인물 금지: 검색어를 장소/사물 위주로 두고, 가로형(landscape)만 받는다.
-이미지가 들어갈 "위치/파일명"은 site/lib/images.ts(imageRegistry) + taxonomy.json(visualKey)이 단일 소스 —
-여기서는 그 둘을 읽어 어떤 visualKey 를 어떤 파일로 받을지 자동 결정(파일/키 하드코딩 X).
+visuals.py — Unsplash 이미지 provider (bigCategory / cluster 대표 비주얼)
+========================================================================
+Unsplash API Guidelines 준수:
+ · HOTLINK: 사진을 로컬에 다운로드하지 않고 Unsplash가 준 photo.urls(regular/small) URL을 그대로 site 에서 사용.
+ · TRIGGER DOWNLOAD: 사용자가 Image Manager 에서 Apply 할 때만 photo.links.download_location 을 호출.
+ · ATTRIBUTION: photographer + Unsplash + UTM 을 assignment 에 저장 → site 가 사진 근처에 표시.
+대상은 bigCategory / cluster (+ hero). 작은 Q&A 카드에는 사용 안 함.
+승인된 assignment 는 site/content/visuals.json 에 저장(= site 가 읽는 단일 소스). ACCESS_KEY 는 서버(admin) 전용.
 """
 from __future__ import annotations
 
 import json
 import os
-import random
-import re
-import time
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 
 import config
 import storage
 
-PEXELS_SEARCH = "https://api.pexels.com/v1/search"
-
-# 키별 검색어 — Daebak 청량한 여행 무드 기준(전역 규칙, 카드별 수동교체 금지):
-#  · 밝은 낮/맑은 하늘/밝은 실내 (밤·노을·어두운 사진 금지, 특히 Hero)
-#  · 카테고리/클러스터 "의미"에 정확히 맞는 사물/장소 (장식용 금지)
-#  · 인물/얼굴/군중/모델/브랜드 로고/워터마크 없음
-#  · 같은 화면 중복 금지 → Hero(skyline) ≠ Travel ≠ Local Places 서로 다른 키
-# 후보가 기준 미달이면 사진 대신 fallback(흰 패널)을 쓴다(억지 사진보다 나음).
-# 모든 후보에 "no people, no faces, no crowd, no watermark" 의도를 깔고 검색.
-_NO_PEOPLE = "no people no crowd"
-_QUERY = {
-    # Hero(밝은 낮 스카이라인) — Travel/Local Places 와 다른 이미지로 분리
-    "seoul-skyline": "Seoul city skyline daytime blue sky",
-    # Travel 큰 카테고리(한강 맑은 낮·컬러) — 공항·스카이라인과 중복 회피
-    "hangang-river": "Seoul Han river blue sky sunny",
-    # Local Places 큰 카테고리(맑은 낮 랜드마크)
-    "seoul-namsan": "N Seoul Tower blue sky",
-    # (Korean Rules / Products: 적합한 '한국' 사진을 못 구해 fallback 아이콘 사용 — taxonomy visualKey 없음)
-    # 클러스터(구체적·낮·사람 없음)
-    "incheon-airport": "Korean Air airplane sky",
-    "arex-train": "airport express train railway daytime",
-    "airport-taxi": "city taxi cab street daytime",
-    "airport-bus": "intercity coach bus highway daytime",
-    "seoul-subway": "Seoul subway station platform empty",
-    "tmoney-card": "subway turnstile gate transit card",
-    "myeongdong-street": "hanok village Korea sunny day",
-    # 큰 카테고리(밝은 사물/음식)
-    "korean-food": "Korean food dishes table bright",
-    "k-beauty-skincare": "Korean cosmetics skincare store shop",
-    "k-fashion-store": "folded clothes neatly stacked shelves bright store",
-    "shopping-bags": "supermarket grocery aisle shelves bright clean",
+# 카테고리/클러스터별 editorial 검색어(taxonomy.visualQuery 가 있으면 그게 우선). 새 카테고리는 title 기반 자동.
+_QUERY_BY_SLUG = {
+    "travel": "Seoul Korea travel skyline Han River editorial",
+    "food": "Korean food editorial table",
+    "k-beauty": "Korean skincare products editorial",
+    "k-fashion": "Korean fashion clothing racks editorial",
+    "shopping": "Korea shopping store products editorial",
+    "korean-rules": "Korea travel essentials payment subway card",
+    "local-places": "Seoul neighborhood travel street editorial",
+    "products": "Korean snacks convenience store",
+    "airport-arrival": "airport terminal departure travel",
+    "seoul-transport": "Seoul subway transport station Korea",
+    "tmoney-wowpass-payments": "Korea subway card payment transit",
+    "sim-esim-wifi-apps": "sim card smartphone travel",
+    "seoul-stay-neighborhoods": "Seoul neighborhood street travel",
+    "korea-itinerary-trip-length": "Seoul travel itinerary map Korea",
+    "seasons-weather-packing": "Korea travel packing suitcase season",
+    "safety-solo-travel": "Seoul safe street travel Korea",
+    "language-culture-basics": "Korean signs menu language travel",
+    "busan-jeju-day-trips": "Busan South Korea coast city",
+    "food-basics": "Korean food banchan table editorial",
+    "shopping-product-discovery": "Korea shopping store products editorial",
 }
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
 def _site_file(*parts) -> str:
     return storage.abspath(os.path.join(config.SITE_DIR, *parts))
 
 
-def parse_registry() -> dict:
-    """site/lib/images.ts 의 imageRegistry → {key: {src, alt, tags}}. (엔트리에 중첩 중괄호 없음 가정)"""
-    path = _site_file("lib", "images.ts")
+def _visuals_path() -> str:
+    return _site_file("content", "visuals.json")
+
+
+def load_visuals() -> dict:
     try:
-        txt = open(path, encoding="utf-8").read()
+        with open(_visuals_path(), encoding="utf-8") as f:
+            return json.load(f)
     except Exception:  # noqa: BLE001
         return {}
-    out = {}
-    for m in re.finditer(r'"([\w-]+)"\s*:\s*\{([^{}]+)\}', txt):
-        key, body = m.group(1), m.group(2)
-        src = re.search(r'src:\s*"([^"]+)"', body)
-        if not src:
-            continue  # imageRegistry 엔트리(=src 보유)만
-        alt = re.search(r'alt:\s*"([^"]+)"', body)
-        tags = re.search(r"tags:\s*\[([^\]]*)\]", body)
-        taglist = re.findall(r'"([^"]+)"', tags.group(1)) if tags else []
-        out[key] = {"src": src.group(1), "alt": alt.group(1) if alt else key, "tags": taglist}
-    return out
 
 
-def _load_taxonomy() -> dict:
-    path = _site_file(config.SITE_TAXONOMY_REL)
+def _save_visuals(store: dict) -> None:
+    os.makedirs(os.path.dirname(_visuals_path()), exist_ok=True)
+    with open(_visuals_path(), "w", encoding="utf-8") as f:
+        json.dump(store, f, ensure_ascii=False, indent=2)
+
+
+def _key() -> str:
+    return getattr(config, "UNSPLASH_ACCESS_KEY", "") or ""
+
+
+def has_key() -> bool:
+    return bool(_key())
+
+
+# ── Unsplash API (서버 전용) ──────────────────────────────────────────────
+def _get(url: str) -> dict:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Client-ID {_key()}",
+            "Accept-Version": "v1",
+            "User-Agent": getattr(config, "UNSPLASH_APP_NAME", "daebak"),
+        },
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def _candidate(p: dict, query: str) -> dict:
+    u = p.get("user") or {}
+    links = p.get("links") or {}
+    ulinks = u.get("links") or {}
+    urls = p.get("urls") or {}
+    return {
+        "provider": "unsplash",
+        "unsplashId": p.get("id"),
+        "url": urls.get("regular"),       # hotlink(site 표시용)
+        "urlSmall": urls.get("small"),
+        "thumb": urls.get("thumb"),
+        "alt": p.get("alt_description") or p.get("description") or query,
+        "photographerName": u.get("name") or "Unsplash",
+        "photographerUrl": ulinks.get("html") or "https://unsplash.com",
+        "sourceUrl": links.get("html") or "https://unsplash.com",
+        "downloadLocation": links.get("download_location"),
+        "queryUsed": query,
+        "width": p.get("width"),
+        "height": p.get("height"),
+    }
+
+
+# 가벼운 점수(다운로드 없이 가능한 휴리스틱) — landscape/aspect + alt 키워드 감점. 이미지 분석은 추후.
+def score_candidate(c: dict) -> float:
+    s = 60.0
+    w, h = c.get("width") or 0, c.get("height") or 0
+    if w and h:
+        ar = w / h
+        if ar >= 1.3:
+            s += 15            # orientation/landscape 우선
+        if ar > 2.3:
+            s -= 12            # 너무 파노라마면 crop 불리
+    alt = (c.get("alt") or "").lower()
+    for bad in ("portrait", "selfie", "model", "headshot", "close-up", "closeup", "face"):
+        if bad in alt:
+            s -= 25            # faceFocusPenalty
+    for bad in ("logo", "watermark"):
+        if bad in alt:
+            s -= 12            # logo/watermark penalty
+    if "people" in alt or "crowd" in alt:
+        s -= 6                 # 사람 허용하되 군중 우선순위 ↓
+    return round(s, 1)
+
+
+def build_visual_query(target: dict) -> str:
+    if target.get("visualQuery"):
+        return target["visualQuery"]
+    slug = target.get("slug") or target.get("key")
+    if slug in _QUERY_BY_SLUG:
+        return _QUERY_BY_SLUG[slug]
+    parts = [target.get("title", ""), (target.get("visualIntent") or ""), "Korea travel editorial"]
+    return " ".join(p for p in parts if p).strip() or "Korea travel editorial"
+
+
+def _search(query: str, orientation: str | None, content_filter: str, per_page: int) -> list:
+    qs = {"query": query, "per_page": per_page, "content_filter": content_filter}
+    if orientation:
+        qs["orientation"] = orientation
+    url = config.UNSPLASH_API_BASE + "/search/photos?" + urllib.parse.urlencode(qs)
     try:
-        return json.load(open(path, encoding="utf-8"))
+        return _get(url).get("results", []) or []
+    except Exception:  # noqa: BLE001 (rate limit/network → 다음 시도)
+        return []
+
+
+def get_candidates(target: dict, per_page: int = 12) -> list:
+    """target = {type, key, title, slug, visualQuery?}. Unsplash 후보 리스트(점수순). download 호출 안 함.
+    좁은 다단어 쿼리가 0건이면 점점 넓혀 재시도(필터완화 → 단어축소). 새 카테고리도 빈손 방지."""
+    if not has_key():
+        return []
+    query = build_visual_query(target)
+    words = query.split()
+    short = " ".join(words[:3]) if len(words) > 3 else query
+    short2 = (" ".join(words[:2]) + " Korea") if len(words) > 2 else query
+    attempts = [
+        (query, "landscape", "high"),
+        (query, "landscape", "low"),
+        (short, "landscape", "low"),
+        (short2, "landscape", "low"),
+        (short, None, "low"),
+    ]
+    results, used = [], query
+    for q, orient, cf in attempts:
+        results = _search(q, orient, cf, per_page)
+        if results:
+            used = q
+            break
+    cands = [_candidate(p, used) for p in results if (p.get("urls") or {}).get("regular")]
+    # 다른 target 에 이미 배정된 사진은 후보에서 제외(같은 이미지가 여러 카드에 뜨는 중복 방지)
+    store = load_visuals()
+    mine = f"{target.get('type')}:{target.get('key') or target.get('slug')}"
+    used_ids = {v.get("unsplashId") for k, v in store.items() if k != mine and v.get("unsplashId")}
+    cands = [c for c in cands if c.get("unsplashId") not in used_ids]
+    cands.sort(key=score_candidate, reverse=True)
+    return cands
+
+
+def apply_visual(candidate: dict, target_type: str, target_key: str) -> dict:
+    """Apply(=사용 확정) 시: ① download_location 호출(필수) ② visuals.json 에 approved 저장."""
+    status, triggered_at = "skipped", None
+    dl = candidate.get("downloadLocation")
+    if dl and has_key():
+        try:
+            _get(dl)  # Unsplash 'trigger download' (Client-ID 헤더로 인증)
+            status = "success"
+        except Exception:  # noqa: BLE001
+            status = "failed"
+        triggered_at = _now_iso()
+    rec = dict(candidate)
+    rec.pop("thumb", None)
+    rec.update({
+        "targetType": target_type,
+        "targetKey": target_key,
+        "downloadTriggeredAt": triggered_at,
+        "downloadTriggerStatus": status,
+        "appliedAt": _now_iso(),
+        "status": "approved",
+        "locked": True,
+    })
+    store = load_visuals()
+    store[f"{target_type}:{target_key}"] = rec
+    _save_visuals(store)
+    return rec
+
+
+def clear_visual(target_type: str, target_key: str) -> bool:
+    store = load_visuals()
+    k = f"{target_type}:{target_key}"
+    if k in store:
+        store.pop(k)
+        _save_visuals(store)
+        return True
+    return False
+
+
+def current_visual(target_type: str, target_key: str) -> dict | None:
+    return load_visuals().get(f"{target_type}:{target_key}")
+
+
+def push_visuals() -> dict:
+    """visuals.json 을 GitHub 에 커밋·푸시(자동배포). publish 의 배치 푸시 재사용."""
+    import publish
+    return publish._git_publish_paths(
+        [_visuals_path()], "visuals: update Unsplash image assignments", config)
+
+
+# ── 대상 목록(taxonomy 기반) ──────────────────────────────────────────────
+def _load_taxonomy() -> dict:
+    try:
+        with open(_site_file(config.SITE_TAXONOMY_REL), encoding="utf-8") as f:
+            return json.load(f)
     except Exception:  # noqa: BLE001
         return {"bigCategories": [], "clusters": []}
 
 
 def list_targets() -> list:
-    """big/cluster 의 visualKey 대상 목록(중복 키는 1개로 합침).
-    [{key, level, name, src, exists, used_by[]}]"""
+    """Image Manager 용 대상 목록: 모든 bigCategory + cluster. 현재 적용 이미지 포함."""
     tx = _load_taxonomy()
-    reg = parse_registry()
-    seen: dict = {}
-
-    def add(level, name, vkey):
-        if not vkey:
-            return
-        if vkey in seen:
-            seen[vkey]["used_by"].append(f"{name}")
-            return
-        r = reg.get(vkey) or {}
-        src = r.get("src")
-        seen[vkey] = {
-            "key": vkey, "level": level, "name": name, "src": src,
-            "used_by": [name],
-            "exists": bool(src and os.path.exists(_site_file("public", src))),
-        }
-
-    for c in tx.get("bigCategories", []):
-        add("bigCategory", c.get("title") or c.get("slug"), c.get("visualKey"))
-    for cl in tx.get("clusters", []):
-        add("cluster", cl.get("title") or cl.get("slug"), cl.get("visualKey"))
-    return list(seen.values())
-
-
-def _query_for(key: str, reg: dict) -> str:
-    if key in _QUERY:
-        return _QUERY[key]
-    r = reg.get(key) or {}
-    if r.get("tags"):
-        return " ".join(r["tags"][:3])
-    return (r.get("alt") or key.replace("-", " ")).strip()
-
-
-def _pexels(query: str, api_key: str, per_page: int = 10) -> list:
-    url = PEXELS_SEARCH + "?" + urllib.parse.urlencode(
-        {"query": query, "orientation": "landscape", "per_page": per_page, "size": "large"})
-    req = urllib.request.Request(
-        url, headers={"Authorization": api_key, "User-Agent": "Mozilla/5.0 (Daebak image fetcher)"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        data = json.loads(r.read().decode("utf-8"))
-    return data.get("photos", []) or []
-
-
-def _download(img_url: str, dest_abs: str) -> int:
-    os.makedirs(os.path.dirname(dest_abs), exist_ok=True)
-    req = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        data = r.read()
-    with open(dest_abs, "wb") as f:
-        f.write(data)
-    return len(data)
-
-
-def fetch_one(target: dict, api_key: str, reg: dict, overwrite: bool = False) -> dict:
-    key = target["key"]
-    src = target.get("src")
-    res = {"key": key, "name": target.get("name", ""), "src": src, "ok": False,
-           "msg": "", "dest_abs": None, "credit": "", "query": ""}
-    if not src:
-        res["msg"] = "레지스트리에 없음 (site/lib/images.ts 에 키 추가 필요)"
-        return res
-    dest = _site_file("public", src)
-    if os.path.exists(dest) and not overwrite:
-        res.update(ok=True, dest_abs=dest, msg="이미 있음 (건너뜀)")
-        return res
-    query = _query_for(key, reg)
-    res["query"] = query
-    if not api_key:
-        res["msg"] = "Pexels 키 없음"
-        return res
-    try:
-        photos = _pexels(query, api_key)
-    except Exception as e:  # noqa: BLE001
-        res["msg"] = f"검색 실패: {e}"
-        return res
-    if not photos:
-        res["msg"] = f"검색 결과 없음 (query: {query})"
-        return res
-    # 기본은 가장 관련도 높은 사진(0번). '교체(overwrite)' 재실행이면 상위권에서 다른 걸로 re-roll.
-    photo = random.choice(photos[:8]) if overwrite else photos[0]
-    img_url = (photo.get("src") or {}).get("large") or (photo.get("src") or {}).get("medium")
-    if not img_url:
-        res["msg"] = "이미지 URL 없음"
-        return res
-    try:
-        n = _download(img_url, dest)
-    except Exception as e:  # noqa: BLE001
-        res["msg"] = f"다운로드 실패: {e}"
-        return res
-    res.update(ok=True, dest_abs=dest, credit=photo.get("photographer", ""),
-              msg=f"저장 {n // 1024} KB · Pexels / {photo.get('photographer', '')}")
-    return res
-
-
-def fetch_all(overwrite: bool = False, api_key: str = "") -> list:
-    """big/cluster 의 모든 visualKey 에 대해 이미지 수급. 결과 리스트 반환."""
-    api_key = api_key or getattr(config, "PEXELS_API_KEY", "")
-    reg = parse_registry()
     out = []
-    for t in list_targets():
-        out.append(fetch_one(t, api_key, reg, overwrite=overwrite))
-        time.sleep(0.3)  # Pexels rate-limit(시간당 200) 여유
+    for c in tx.get("bigCategories", []):
+        out.append({
+            "type": "bigCategory", "key": c.get("slug"), "slug": c.get("slug"),
+            "title": c.get("title"), "visualQuery": c.get("visualQuery"),
+            "current": current_visual("bigCategory", c.get("slug")),
+        })
+    for cl in tx.get("clusters", []):
+        out.append({
+            "type": "cluster", "key": cl.get("slug"), "slug": cl.get("slug"),
+            "title": cl.get("title"), "visualQuery": cl.get("visualQuery"),
+            "current": current_visual("cluster", cl.get("slug")),
+        })
     return out
-
-
-def saved_paths(results: list) -> list:
-    return [r["dest_abs"] for r in results if r.get("ok") and r.get("dest_abs")]
-
-
-def push_images(results: list, message: str = "publish: category images (Pexels)") -> dict:
-    """받은 이미지를 git add/commit/push — publish.py 의 검증된 헬퍼 재사용(별도 푸시 로직 안 만듦)."""
-    paths = saved_paths(results)
-    if not paths:
-        return {"ok": False, "reason": "no_files"}
-    try:
-        import publish
-        return publish._git_publish_paths(paths, message, config)
-    except Exception as e:  # noqa: BLE001
-        return {"ok": False, "reason": "error", "log": str(e)}

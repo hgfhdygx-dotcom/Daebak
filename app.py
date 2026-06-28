@@ -689,74 +689,140 @@ def render_quick():
 
 
 # ══════════════════════════════════════════════════════════════════════════
-#  🖼 이미지 — 카테고리/클러스터 대표 이미지 자동 수급 (Pexels)
+#  🖼 Image Manager — Unsplash 카테고리/클러스터 대표 비주얼 (선택형, hotlink)
 # ══════════════════════════════════════════════════════════════════════════
 def render_images():
-    st.subheader("🖼 이미지 — 카테고리 대표 이미지 자동 수급")
-    next_box("큰 카테고리 + 중간 카테고리 대표 이미지를 Pexels(무료·상업적·출처표기 불필요)에서 "
-             "자동으로 받아 사이트에 저장합니다. 작은 Q&A 카드는 대상이 아니에요(아이콘 표시).")
+    st.subheader("🖼 Image Manager — Unsplash (카테고리 / 클러스터 비주얼)")
+    next_box("① 카테고리·클러스터를 고르고 → ② **Unsplash 후보 불러오기** → ③ 마음에 드는 사진의 **Apply** "
+             "를 누르면 그 자리에 적용됩니다. 사진은 다운로드하지 않고 Unsplash 에서 **hotlink** 로 표시되고, "
+             "Apply 시 Unsplash **download 가 트리거**되며 **사진가 attribution** 이 함께 저장됩니다. "
+             "작은 Q&A 카드에는 큰 사진을 넣지 않아요.")
 
-    has_key = bool(getattr(config, "PEXELS_API_KEY", ""))
-    with st.expander("Pexels API 키  " + ("✅ 입력됨" if has_key else "⚠️ 필요"), expanded=not has_key):
+    # ── Unsplash Access Key (서버 전용) ────────────────────────────────────
+    has_key = visuals.has_key()
+    with st.expander("Unsplash Access Key  " + ("✅ 입력됨 (서버 전용)" if has_key else "⚠️ 필요"),
+                     expanded=not has_key):
         st.markdown(
-            "1) **pexels.com/api** 접속 → **Get Started**(가입/로그인, 무료)\n"
-            "2) **Your API Key** 복사 → 아래에 붙여넣고 저장\n\n"
-            "→ 무료 · 상업적 사용 OK · 출처표기 불필요 (시간당 200건).")
-        k = st.text_input("Pexels API Key", value=getattr(config, "PEXELS_API_KEY", ""),
-                          type="password", key="pexels_key_in")
-        if st.button("💾 키 저장", key="save_pexels"):
+            "1) **unsplash.com/developers** → **New Application**(무료)\n"
+            "2) **Access Key** 복사 → 아래에 붙여넣고 저장 (Secret 은 선택)\n\n"
+            "→ 키는 `settings.json`(서버, gitignore)에만 저장됩니다. 사이트/클라이언트 번들엔 노출되지 않아요.")
+        k = st.text_input("Access Key", value=getattr(config, "UNSPLASH_ACCESS_KEY", ""),
+                          type="password", key="unsplash_key_in")
+        if st.button("💾 키 저장", key="save_unsplash"):
             s = storage.safe_load_json(config.SETTINGS_FILE, {}) or {}
-            s["PEXELS_API_KEY"] = (k or "").strip()
+            s["UNSPLASH_ACCESS_KEY"] = (k or "").strip()
             storage.safe_save_json(config.SETTINGS_FILE, s)
-            config.PEXELS_API_KEY = (k or "").strip()
+            config.UNSPLASH_ACCESS_KEY = (k or "").strip()
             st.success("저장했어요. ✅")
             st.rerun()
 
+    # ── 대상 선택 ──────────────────────────────────────────────────────────
     targets = visuals.list_targets()
-    have = sum(1 for t in targets if t["exists"])
-    st.caption(f"대상 {len(targets)}개 (큰 카테고리 + 중간 카테고리) · "
-               f"이미지 있음 {have} / 없음 {len(targets) - have}")
-    for t in targets:
-        mark = "🟢" if t["exists"] else "⬜"
-        lvl = "큰 카테고리" if t["level"] == "bigCategory" else "중간 카테고리"
-        src = t["src"] or "—(레지스트리에 키 없음)"
-        st.markdown(f"{mark} **{t['key']}** · {lvl} · 사용: {', '.join(t['used_by'])} · `{src}`")
+    big = sum(1 for t in targets if t["type"] == "bigCategory")
+    have = sum(1 for t in targets if t.get("current"))
+    st.caption(f"대상 {len(targets)}개 (큰 카테고리 {big} + 클러스터 {len(targets) - big}) · "
+               f"적용됨 {have} / 비어있음 {len(targets) - have}")
 
-    overwrite = st.checkbox("이미 있는 이미지도 새로 받기(교체)", value=False, key="img_overwrite")
-    if st.button("⬇ 전체 자동 수급", type="primary", disabled=not has_key, key="img_fetch"):
-        with st.spinner("Pexels에서 받는 중…"):
-            ss["img_results"] = visuals.fetch_all(overwrite=overwrite)
+    def _label(t):
+        mark = "🟢" if t.get("current") else "⬜"
+        lvl = "큰" if t["type"] == "bigCategory" else "중간"
+        return f"{mark} [{lvl}] {t['title']}  ·  {t['type']}:{t['key']}"
+
+    options = {_label(t): t for t in targets}
+    pick = st.selectbox("카테고리 / 클러스터 선택", list(options.keys()), key="img_target_pick")
+    target = options[pick]
+    tkey = f"{target['type']}:{target['key']}"
+
+    # ── 현재 적용된 사진 + attribution + 메타데이터 ─────────────────────────
+    cur = target.get("current")
+    if cur:
+        st.markdown("**현재 적용된 사진**")
+        cc = st.columns([1, 3])
+        try:
+            cc[0].image(cur.get("urlSmall") or cur.get("url"), width=190)
+        except Exception:  # noqa: BLE001
+            cc[0].write("🟢")
+        with cc[1]:
+            st.markdown(f"📸 Photo by **{cur.get('photographerName')}** on Unsplash")
+            st.caption(f"unsplashId `{cur.get('unsplashId')}` · download **{cur.get('downloadTriggerStatus')}** "
+                       f"@ {cur.get('downloadTriggeredAt')}")
+            st.caption(f"appliedAt {cur.get('appliedAt')}")
+            st.caption(f"source {cur.get('sourceUrl')}")
+        b1, b2 = st.columns(2)
+        if b1.button("🗑 비우기(Clear) → 흰 패널", key="img_clear"):
+            visuals.clear_visual(target["type"], target["key"])
+            ss.pop("img_cands", None)
+            ss.pop("img_applied", None)
+            st.rerun()
+        if b2.button("🔁 다른 후보 다시 보기(Regenerate)", key="img_regen"):
+            ss.pop("img_cands", None)
+
+    # ── 후보 불러오기 ──────────────────────────────────────────────────────
+    st.divider()
+    if st.button("🔎 Unsplash 후보 불러오기", type="primary", disabled=not has_key, key="img_search"):
+        with st.spinner("Unsplash 검색 중…"):
+            try:
+                ss["img_cands"] = {"target": tkey, "items": visuals.get_candidates(target, per_page=12)}
+            except Exception as e:  # noqa: BLE001
+                ss["img_cands"] = {"target": tkey, "items": [], "error": str(e)}
     if not has_key:
-        st.caption("먼저 위에서 Pexels 키를 저장하세요.")
+        st.caption("먼저 위에서 Unsplash Access Key 를 저장하세요.")
 
-    results = ss.get("img_results")
-    if results:
-        ok = sum(1 for r in results if r["ok"])
-        st.success(f"완료: {ok}/{len(results)} 처리")
-        for r in results:
-            c = st.columns([1, 4])
-            if r["ok"] and r.get("dest_abs"):
-                try:
-                    c[0].image(r["dest_abs"], width=150)
-                except Exception:  # noqa: BLE001
-                    c[0].write("🟢")
-                c[1].markdown(f"**{r['key']}** → `{r['src']}`  \n{r['msg']}")
-            else:
-                c[0].write("⬜")
-                c[1].markdown(f"**{r['key']}** — {r.get('msg', '')}  \n검색어: `{r.get('query', '')}`")
-        st.divider()
-        st.caption("이미지는 site/public 에 저장됩니다. 라이브 사이트에 반영하려면 아래로 올리세요.")
-        if st.button("🚀 GitHub에 올리기(배포)", type="primary", key="img_push"):
-            with st.spinner("커밋·푸시 중…"):
-                push = visuals.push_images(results)
-            if push.get("ok"):
-                st.success("올렸어요. 약 1분 뒤 자동 배포됩니다(그 후 Ctrl+Shift+R). ✅")
-            elif push.get("reason") == "no_files":
-                st.info("올릴 새 이미지가 없어요.")
-            elif push.get("reason") == "not_ready":
-                st.warning("GitHub 토큰/원격 미설정 — `깃토큰입력.bat` 후 다시 시도하세요.")
-            else:
-                st.error("푸시 실패: " + str(push.get("log", push.get("reason", ""))))
+    cands = ss.get("img_cands")
+    if cands and cands.get("target") == tkey:
+        items = cands.get("items") or []
+        if cands.get("error"):
+            st.error("검색 실패(요청 한도/네트워크): " + str(cands["error"]))
+        elif not items:
+            st.warning("후보가 없어요. 검색어가 너무 좁을 수 있어요 — 잠시 후 다시 시도하거나 taxonomy 의 visualQuery 를 조정하세요.")
+        else:
+            st.markdown(f"**후보 {len(items)}개** — 마음에 드는 사진의 **Apply** 를 누르세요. "
+                        "(그 순간에만 Unsplash download 가 트리거됩니다. 보기만 할 땐 호출 안 함.)")
+            ncol = 3
+            for ri in range(0, len(items), ncol):
+                row = items[ri:ri + ncol]
+                cols = st.columns(ncol)
+                for ci, cand in enumerate(row):
+                    with cols[ci]:
+                        try:
+                            st.image(cand.get("thumb") or cand.get("urlSmall") or cand.get("url"), width=210)
+                        except Exception:  # noqa: BLE001
+                            st.write("🖼")
+                        st.caption(f"Photo by {cand.get('photographerName')} on Unsplash")
+                        if st.button("✅ Apply", key=f"apply_{cand.get('unsplashId')}_{ri}_{ci}"):
+                            with st.spinner("적용 + Unsplash download 트리거 중…"):
+                                rec = visuals.apply_visual(cand, target["type"], target["key"])
+                            ss["img_applied"] = rec
+                            ss.pop("img_cands", None)
+                            st.rerun()
+
+    # ── Apply 결과(메타데이터, 스크린샷용) ──────────────────────────────────
+    applied = ss.get("img_applied")
+    if applied and f"{applied.get('targetType')}:{applied.get('targetKey')}" == tkey:
+        st.success(f"적용 완료 ✅  — Photo by {applied.get('photographerName')} on Unsplash")
+        st.json({
+            "targetType": applied.get("targetType"),
+            "targetKey": applied.get("targetKey"),
+            "unsplashId": applied.get("unsplashId"),
+            "photographerName": applied.get("photographerName"),
+            "downloadTriggeredAt": applied.get("downloadTriggeredAt"),
+            "downloadTriggerStatus": applied.get("downloadTriggerStatus"),
+            "sourceUrl": applied.get("sourceUrl"),
+            "appliedAt": applied.get("appliedAt"),
+        })
+
+    # ── 배포 ───────────────────────────────────────────────────────────────
+    st.divider()
+    st.caption("적용한 이미지는 `site/content/visuals.json` 에 저장됩니다. 라이브 사이트에 반영하려면 올리세요.")
+    if st.button("🚀 GitHub 에 올리기(배포)", type="primary", key="img_push"):
+        with st.spinner("커밋·푸시 중…"):
+            push = visuals.push_visuals()
+        if push.get("ok"):
+            st.success("올렸어요. 약 1분 뒤 자동 배포됩니다(그 후 Ctrl+Shift+R). ✅")
+        elif push.get("reason") == "not_ready":
+            st.warning("GitHub 토큰/원격 미설정 — `깃토큰입력.bat` 후 다시 시도하세요.")
+        else:
+            st.error("푸시 실패: " + str(push.get("log", push.get("reason", ""))))
 
 
 # ══════════════════════════════════════════════════════════════════════════

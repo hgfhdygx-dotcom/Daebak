@@ -1,6 +1,7 @@
 import Image from "next/image";
 import ClusterIcon from "@/components/ClusterIcon";
 import { pickImage } from "@/lib/images";
+import type { ApprovedVisual } from "@/lib/visuals";
 import type { Post } from "@/lib/posts";
 
 // 레벨 기반 문맥 썸네일.
@@ -18,6 +19,7 @@ const ASPECT: Record<string, string> = {
 
 export default function SmartThumbnail({
   post,
+  visual,
   aspect = "16/9",
   level = "article",
   iconKind,
@@ -28,6 +30,7 @@ export default function SmartThumbnail({
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px",
 }: {
   post: Post;
+  visual?: ApprovedVisual | null; // 승인된 Unsplash 사진(있으면 hotlink 로 우선 표시). 없으면 폴백.
   aspect?: "16/9" | "4/3" | "1/1" | "3/1";
   level?: "bigCategory" | "cluster" | "article";
   iconKind?: string; // 폴백 아이콘 명시(taxonomy icon). 없으면 문맥 아이콘.
@@ -41,6 +44,24 @@ export default function SmartThumbnail({
   const resolvedAlt = alt || r.alt;
   const resolvedIcon = iconKind || r.iconKind;
   const box = `relative overflow-hidden ${ASPECT[aspect] || ASPECT["16/9"]} ${className}`;
+
+  // 승인된 Unsplash 사진 → HOTLINK(<img> 로 Unsplash CDN 직접 표시, 로컬 저장/프록시 없음 = 가이드라인 준수).
+  // attribution 은 카드/호출부가 형제 overlay 로 표시(링크 중첩 방지).
+  if (visual?.url) {
+    return (
+      <div className={box}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={visual.url}
+          alt={alt || visual.alt}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={priority ? "high" : undefined}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+        />
+      </div>
+    );
+  }
 
   // 사진 있으면 어느 레벨이든 표시
   if (r.mode === "photo" && r.image) {

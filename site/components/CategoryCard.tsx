@@ -1,7 +1,9 @@
 import Link from "next/link";
 import SmartThumbnail from "@/components/SmartThumbnail";
+import Attribution from "@/components/Attribution";
 import LineIcon from "@/components/LineIcon";
 import { Chip } from "@/components/Chip";
+import { getApprovedVisual } from "@/lib/visuals";
 import type { HomeCategory, Post } from "@/lib/posts";
 
 // 홈 bigCategory 카드(사진 중심·큼). 상단 16:9 사진 + 제목/블러브 + 태그 pill. cluster 카드보다 크고 사진 우위.
@@ -10,21 +12,25 @@ export default function CategoryCard({ cat }: { cat: HomeCategory }) {
     title: cat.title,
     bigCategory: cat.title,
     bigCategorySlug: cat.slug,
-    imageKey: cat.visualKey,
   } as Post;
+  const approved = getApprovedVisual("bigCategory", cat.slug); // 승인된 Unsplash 사진(있으면 hotlink)
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-card transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover focus-within:shadow-card-hover">
-      <Link href={cat.href} aria-label={cat.title} className="block overflow-hidden">
-        <SmartThumbnail
-          post={visual}
-          aspect="16/9"
-          level="bigCategory"
-          iconKind={cat.icon}
-          tint={cat.tint}
-          alt={`${cat.title} guides`}
-        />
-      </Link>
+      <div className="relative overflow-hidden">
+        <Link href={cat.href} aria-label={cat.title} className="block overflow-hidden">
+          <SmartThumbnail
+            post={visual}
+            visual={approved}
+            aspect="16/9"
+            level="bigCategory"
+            iconKind={cat.icon}
+            tint={cat.tint}
+            alt={`${cat.title} guides`}
+          />
+        </Link>
+        {approved ? <Attribution visual={approved} className="absolute bottom-1.5 right-1.5 z-10" /> : null}
+      </div>
       <div className="flex flex-1 flex-col p-5">
         <Link href={cat.href} className="block">
           <span className="flex items-center justify-between gap-2 font-display text-base font-bold tracking-tight text-ink transition-colors group-hover:text-accent-ink">

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import SmartThumbnail from "@/components/SmartThumbnail";
+import Attribution from "@/components/Attribution";
 import StatusBadge from "@/components/StatusBadge";
 import LineIcon from "@/components/LineIcon";
+import { getApprovedVisual } from "@/lib/visuals";
 import { categoryTone, type Cluster, type Post } from "@/lib/posts";
 
 // 클러스터 카드(2~3열 그리드용) — 상단 짧은 배너 사진(max-h 캡 → 정보보다 크지 않게) + 상태배지 +
@@ -26,20 +28,24 @@ export default function ClusterCard({
     cluster: cluster.title,
     bigCategorySlug: categorySlug,
     clusterSlug: cluster.slug,
-    imageKey: cluster.visualKey,
   } as Post;
+  const approved = getApprovedVisual("cluster", cluster.slug); // 승인된 Unsplash 사진(있으면 hotlink)
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-card-hover">
-      {/* 짧은 배너(캡) — 사진이 정보보다 커지지 않게 */}
-      <SmartThumbnail
-        post={visual}
-        aspect="16/9"
-        level="cluster"
-        iconKind={cluster.icon}
-        tint={tint}
-        className="max-h-36"
-      />
+      {/* 짧은 배너(캡) — 사진이 정보보다 커지지 않게. attribution 은 stretched 링크 위(z-10) overlay */}
+      <div className="relative">
+        <SmartThumbnail
+          post={visual}
+          visual={approved}
+          aspect="16/9"
+          level="cluster"
+          iconKind={cluster.icon}
+          tint={tint}
+          className="max-h-36"
+        />
+        {approved ? <Attribution visual={approved} className="absolute bottom-1.5 right-1.5 z-10" /> : null}
+      </div>
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-display text-base font-bold tracking-tight text-ink">

@@ -162,6 +162,22 @@ function SiteFooter() {
             About &amp; sources
           </Link>
         </p>
+        <p className="mt-4 text-xs leading-relaxed text-ink-soft">
+          Category &amp; topic visuals via{" "}
+          <a
+            href="https://unsplash.com/?utm_source=daebak&utm_medium=referral"
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-2 hover:text-ink-muted"
+          >
+            Unsplash
+          </a>
+          , hotlinked and shown with photographer attribution.{" "}
+          <Link href="/about" className="underline underline-offset-2 hover:text-ink-muted">
+            Image credits
+          </Link>
+          .
+        </p>
       </div>
     </footer>
   );

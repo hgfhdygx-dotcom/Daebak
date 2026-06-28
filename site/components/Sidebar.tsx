@@ -1,6 +1,8 @@
 import Link from "next/link";
 import SmartThumbnail from "@/components/SmartThumbnail";
+import Attribution from "@/components/Attribution";
 import { getCluster } from "@/lib/posts";
+import { getApprovedVisual } from "@/lib/visuals";
 import type { ParsedTable } from "@/lib/markdownTable";
 import type { Post } from "@/lib/posts";
 
@@ -45,9 +47,9 @@ export default function Sidebar({
     bigCategory: post.bigCategory,
     bigCategorySlug: post.bigCategorySlug,
     clusterSlug: post.clusterSlug,
-    imageKey: cluster?.visualKey,
   } as Post;
   const visualIcon = cluster?.icon || "travel";
+  const approved = getApprovedVisual("cluster", post.clusterSlug); // 승인된 Unsplash 사진(있으면 hotlink)
 
   let picks: { when: string; pick: string }[] = [];
   if (table) {
@@ -64,7 +66,10 @@ export default function Sidebar({
     <div className="space-y-6">
       {/* compact contextual visual — 작고 보조적(답변을 밀어내지 않음) */}
       <div className="overflow-hidden rounded-2xl border border-line shadow-card">
-        <SmartThumbnail post={visual} aspect="4/3" level="cluster" iconKind={visualIcon} />
+        <div className="relative">
+          <SmartThumbnail post={visual} visual={approved} aspect="4/3" level="cluster" iconKind={visualIcon} />
+          {approved ? <Attribution visual={approved} className="absolute bottom-1.5 right-1.5 z-10" /> : null}
+        </div>
         {cluster ? (
           <p className="px-4 py-2.5 text-[0.72rem] font-medium text-ink-muted">
             From <span className="text-accent-ink">{cluster.title}</span>

@@ -7,8 +7,10 @@ import PopularGuides from "@/components/PopularGuides";
 import SearchBar from "@/components/SearchBar";
 import SectionBand from "@/components/SectionBand";
 import SmartThumbnail from "@/components/SmartThumbnail";
+import Attribution from "@/components/Attribution";
 import LineIcon from "@/components/LineIcon";
 import JsonLd from "@/components/JsonLd";
+import { getApprovedVisual } from "@/lib/visuals";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 const INSTAGRAM = "https://instagram.com/kor_punch_boy";
@@ -50,7 +52,7 @@ const websiteLd = {
 // 검색 예시 칩(시드) + 신뢰 한 줄(예시칩과 한 행에 결합).
 const EXAMPLES = ["Incheon Airport to Seoul", "Seoul subway & T-money", "Where to stay in Seoul"];
 
-// 히어로 우측 여행 비주얼(레지스트리 seoul-skyline → 사진 있으면 사진, 없으면 폴백). 데이터 기반.
+// 히어로 우측 여행 비주얼 — admin Image Manager 의 'hero:home' 승인 사진(있으면 hotlink, 없으면 흰 패널 폴백).
 const HERO_VISUAL = {
   slug: "", title: "Seoul skyline and travel", body: "",
   bigCategory: "Travel", bigCategorySlug: "travel",
@@ -60,6 +62,7 @@ export default function Home() {
   const posts = getAllPosts();
   const popular = posts.slice(0, 4);
   const homeCats = getHomeCategories(); // 모든 bigCategory 카드화(MORE 제거). 이미지 미지정이면 fallback.
+  const heroVisual = getApprovedVisual("hero", "home"); // 승인된 Unsplash 히어로 사진(있으면 hotlink)
 
   return (
     <>
@@ -109,8 +112,9 @@ export default function Home() {
           {/* RIGHT — 큰 비주얼(좌우 빈 공간 제거). 모바일은 숨겨 검색 우선. */}
           <div className="group relative hidden lg:block">
             <div className="overflow-hidden rounded-[28px] border border-line shadow-card-hover">
-              <SmartThumbnail post={HERO_VISUAL} aspect="16/9" level="bigCategory" priority className="max-h-[340px]" />
+              <SmartThumbnail post={HERO_VISUAL} visual={heroVisual} aspect="16/9" level="bigCategory" priority className="max-h-[340px]" />
             </div>
+            {heroVisual ? <Attribution visual={heroVisual} className="absolute right-3 top-3 z-10" /> : null}
             <div className="pointer-events-none absolute inset-x-4 bottom-4 flex items-center gap-2 rounded-xl border border-line/60 bg-surface/85 px-3.5 py-2 text-[0.75rem] font-medium text-ink-muted backdrop-blur">
               <LineIcon name="compass" className="h-4 w-4 text-accent-ink" />
               Airport → Seoul → neighborhoods → stay
