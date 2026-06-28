@@ -1,12 +1,12 @@
-# 화면 테마 (겉모습 전용 — 로직과 무관). 밝은 모드 + 인디고 액센트.
+# 화면 테마 (겉모습 전용 — 로직과 무관). 밝은 모드 + Daebak sky-blue 액센트(사용자 사이트와 동일 톤).
 [theme]
 base = "light"
-primaryColor = "#6366f1"
-linkColor    = "#4f46e5"
-backgroundColor          = "#f4f5fb"
+primaryColor = "#1e8fff"
+linkColor    = "#1668c9"
+backgroundColor          = "#f4f9ff"
 secondaryBackgroundColor = "#ffffff"
-textColor                = "#1a1d27"
-borderColor              = "#e7e9f2"
+textColor                = "#16263a"
+borderColor              = "#d9e8f7"
 font        = "-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif"
 baseRadius       = "0.75rem"
 buttonRadius     = "0.625rem"

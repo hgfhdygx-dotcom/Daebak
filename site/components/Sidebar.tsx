@@ -1,4 +1,6 @@
 import Link from "next/link";
+import SmartThumbnail from "@/components/SmartThumbnail";
+import { getCluster } from "@/lib/posts";
 import type { ParsedTable } from "@/lib/markdownTable";
 import type { Post } from "@/lib/posts";
 
@@ -8,12 +10,9 @@ const INSTAGRAM = "https://instagram.com/kor_punch_boy";
 export function AskCta() {
   return (
     <div className="rounded-2xl border border-accent/30 bg-surface p-5">
-      <p className="font-display text-base font-semibold text-ink">
-        Ask anything about Korea
-      </p>
+      <p className="font-display text-base font-semibold text-ink">Ask anything about Korea</p>
       <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
-        Travel, food, transport — ask and I&apos;ll find the real answer, from a
-        local Korean.
+        Travel, food, transport — ask and I&apos;ll find the real answer, from a local Korean.
       </p>
       <a
         href={INSTAGRAM}
@@ -27,14 +26,29 @@ export function AskCta() {
   );
 }
 
-// 데스크톱 우측 사이드바: 빠른 선택(비교표의 Best for→Option) · 최신글 · 문의 CTA.
+// 데스크톱 우측 사이드바: compact contextual visual(작게) · 빠른 선택 · 최신글 · 문의 CTA.
+// 사이드바 자체가 Article 에서 lg+ 에서만 렌더 → 모바일에서는 이미지 안 보임(답변 우선).
 export default function Sidebar({
+  post,
   table,
   related,
 }: {
+  post: Post;
   table: ParsedTable | null;
   related: Post[];
 }) {
+  const cluster = post.clusterSlug ? getCluster(post.clusterSlug) : null;
+  // 클러스터 의미 기반 contextual visual(사진 있으면 사진, 없으면 흰 패널 fallback). imageKey=클러스터 visualKey.
+  const visual = {
+    title: cluster?.title || post.cluster || post.bigCategory || "Korea travel",
+    cluster: cluster?.title || post.cluster,
+    bigCategory: post.bigCategory,
+    bigCategorySlug: post.bigCategorySlug,
+    clusterSlug: post.clusterSlug,
+    imageKey: cluster?.visualKey,
+  } as Post;
+  const visualIcon = cluster?.icon || "travel";
+
   let picks: { when: string; pick: string }[] = [];
   if (table) {
     const bi = table.headers.findIndex((h) => /best/i.test(h));
@@ -48,18 +62,24 @@ export default function Sidebar({
 
   return (
     <div className="space-y-6">
+      {/* compact contextual visual — 작고 보조적(답변을 밀어내지 않음) */}
+      <div className="overflow-hidden rounded-2xl border border-line shadow-card">
+        <SmartThumbnail post={visual} aspect="4/3" level="cluster" iconKind={visualIcon} />
+        {cluster ? (
+          <p className="px-4 py-2.5 text-[0.72rem] font-medium text-ink-muted">
+            From <span className="text-accent-ink">{cluster.title}</span>
+          </p>
+        ) : null}
+      </div>
+
       {picks.length > 0 ? (
         <div className="rounded-2xl border border-line p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
-            Quick pick
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">Quick pick</p>
           <ul className="mt-3 space-y-3 text-sm">
             {picks.map((p, i) => (
               <li key={i} className="leading-snug">
                 <span className="text-ink-muted">{p.when}</span>
-                <span className="mt-0.5 block font-medium text-accent-ink">
-                  → {p.pick}
-                </span>
+                <span className="mt-0.5 block font-medium text-accent-ink">→ {p.pick}</span>
               </li>
             ))}
           </ul>

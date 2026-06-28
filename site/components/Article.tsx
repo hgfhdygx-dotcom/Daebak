@@ -111,7 +111,7 @@ export default function Article({
         {/* 데스크톱: sticky 사이드바 */}
         <aside className="hidden lg:block">
           <div className="sticky top-20">
-            <Sidebar table={table} related={related} />
+            <Sidebar post={post} table={table} related={related} />
           </div>
         </aside>
       </div>

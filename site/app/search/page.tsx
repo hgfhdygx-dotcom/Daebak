@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import AnswerCard from "@/components/AnswerCard";
+import SearchBar from "@/components/SearchBar";
+import SectionBand from "@/components/SectionBand";
+import LineIcon from "@/components/LineIcon";
 import { distinctCardIcons } from "@/lib/cardIntent";
 import { getAllPosts } from "@/lib/posts";
 
@@ -8,7 +12,34 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-// 검색 — 서버에서 질문/제목/요약을 필터(클라 JS 불필요). 검색 페이지는 색인 제외.
+const SUGGESTIONS = [
+  "Incheon Airport to Seoul",
+  "Seoul subway with T-money",
+  "Where to stay in Seoul",
+  "What to buy in Korea",
+];
+
+function Suggestions({ heading }: { heading: string }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">{heading}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {SUGGESTIONS.map((s) => (
+          <Link
+            key={s}
+            href={`/search?q=${encodeURIComponent(s)}`}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm text-ink-muted transition-colors hover:border-accent hover:text-accent-ink"
+          >
+            <LineIcon name="search" className="h-3.5 w-3.5 text-ink-soft" />
+            {s}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 검색 — 서버 필터(클라 JS 불필요 → loading/error 상태 없음). sky 헤더 + 결과 그리드 + 빈/무결과 상태.
 export default async function SearchPage({
   searchParams,
 }: {
@@ -18,43 +49,65 @@ export default async function SearchPage({
   const query = q.trim().toLowerCase();
   const results = query
     ? getAllPosts().filter((p) =>
-        `${p.question || ""} ${p.title} ${p.summary || ""}`
-          .toLowerCase()
-          .includes(query),
+        `${p.question || ""} ${p.title} ${p.summary || ""}`.toLowerCase().includes(query),
       )
     : [];
   const resultIcons = distinctCardIcons(results);
 
   return (
-    <div className="mx-auto max-w-[720px] px-5 py-10 sm:px-6 sm:py-14">
-      <h1 className="font-display text-2xl font-bold tracking-tight">Search</h1>
-
-      <form action="/search" className="mt-4" role="search">
-        <input
-          name="q"
-          type="search"
+    <>
+      {/* sky 헤더 — 제목 + 검색바 + 결과 개수 */}
+      <SectionBand variant="gradient" className="pt-7 pb-7 sm:pt-9 sm:pb-8">
+        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          {query ? "Search results" : "Search Korea guides"}
+        </h1>
+        <p className="mt-1.5 text-sm text-ink-muted">
+          Find a Korea travel question — answers with prices, routes, and sources.
+        </p>
+        <SearchBar
+          className="mt-5 max-w-2xl"
           defaultValue={q}
-          placeholder="Search Seoul, food, transport…"
-          aria-label="Search Korea guides"
-          className="w-full rounded-full border border-line bg-surface px-4 py-2.5 text-base text-ink outline-none focus:border-accent"
+          placeholder="Search airport, subway, food, places…"
+          autoFocus
         />
-      </form>
+        {query ? (
+          <p className="mt-3 text-sm font-medium text-ink-muted">
+            <span className="text-ink">{results.length}</span> guide{results.length === 1 ? "" : "s"}{" "}
+            found for “{q}”
+          </p>
+        ) : null}
+      </SectionBand>
 
-      {query ? (
-        <p className="mt-6 text-sm text-ink-muted">
-          {results.length} result{results.length === 1 ? "" : "s"} for “{q}”
-        </p>
-      ) : (
-        <p className="mt-6 text-sm text-ink-muted">
-          Type a question — e.g. “airport to Seoul”, “SIM card”, “visa”.
-        </p>
-      )}
-
-      <div className="mt-4 grid gap-3">
-        {results.map((p, i) => (
-          <AnswerCard key={p.slug} post={p} variant="list" icon={resultIcons[i]} />
-        ))}
-      </div>
-    </div>
+      {/* 결과 / 상태 */}
+      <SectionBand variant="white" className="py-8">
+        {!query ? (
+          <Suggestions heading="Try a popular search" />
+        ) : results.length ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {results.map((p, i) => (
+              <AnswerCard key={p.slug} post={p} variant="list" icon={resultIcons[i]} />
+            ))}
+          </div>
+        ) : (
+          <div className="max-w-xl">
+            {/* 작은 white panel fallback (큰 이미지 박스 금지) */}
+            <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card">
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-ink">
+                <LineIcon name="search" className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="font-display text-base font-bold tracking-tight text-ink">
+                  No results for “{q}”
+                </p>
+                <p className="mt-0.5 text-sm text-ink-muted">Try a different phrase, or one of these:</p>
+              </div>
+            </div>
+            <div className="mt-5">
+              <Suggestions heading="Popular searches" />
+            </div>
+          </div>
+        )}
+      </SectionBand>
+    </>
   );
 }

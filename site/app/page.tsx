@@ -4,6 +4,7 @@ import { getAllPosts, getHomeCategories } from "@/lib/posts";
 import type { Post } from "@/lib/posts";
 import CategoryCard from "@/components/CategoryCard";
 import PopularGuides from "@/components/PopularGuides";
+import SearchBar from "@/components/SearchBar";
 import SectionBand from "@/components/SectionBand";
 import SmartThumbnail from "@/components/SmartThumbnail";
 import ClusterIcon from "@/components/ClusterIcon";
@@ -88,24 +89,7 @@ export default function Home() {
               guides, from a Korean local.
             </p>
 
-            <form action="/search" role="search" className="mt-6">
-              <div className="flex items-center gap-2.5 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card transition-colors focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15">
-                <LineIcon name="search" className="h-5 w-5 shrink-0 text-ink-soft" />
-                <input
-                  name="q"
-                  type="search"
-                  placeholder="Ask about Korea travel, food, or local places…"
-                  aria-label="Ask about Korea"
-                  className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-soft"
-                />
-                <button
-                  type="submit"
-                  className="shrink-0 rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover"
-                >
-                  Search
-                </button>
-              </div>
-            </form>
+            <SearchBar className="mt-6" placeholder="Ask about Korea travel, food, or local places…" />
 
             {/* 예시 칩 + 신뢰 한 줄(결합) */}
             <div className="mt-4 flex flex-wrap items-center gap-2">
