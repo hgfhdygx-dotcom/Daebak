@@ -52,8 +52,8 @@ _QUERY = {
     # 큰 카테고리(밝은 사물/음식)
     "korean-food": "Korean food dishes table bright",
     "k-beauty-skincare": "Korean cosmetics skincare store shop",
-    "k-fashion-store": "colorful clothes clothing rack bright store",
-    "shopping-bags": "Seoul shopping street storefronts daytime",
+    "k-fashion-store": "folded clothes neatly stacked shelves bright store",
+    "shopping-bags": "supermarket grocery aisle shelves bright clean",
 }
 
 

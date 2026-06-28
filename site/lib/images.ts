@@ -109,7 +109,7 @@ export const imageRegistry: Record<string, RegistryImage> = {
   },
   "k-fashion-store": {
     src: "images/travel/k-fashion.jpg",
-    alt: "Clothing on racks in a fashion store",
+    alt: "A wall of neatly folded jeans in a clothing store",
     caption: "Korean fashion spans streetwear, minimal basics, and trend pieces.",
     tags: ["fashion", "clothing", "clothes", "store", "apparel", "streetwear", "outfit"],
     allowedCategories: ["K-Fashion"],
@@ -117,7 +117,7 @@ export const imageRegistry: Record<string, RegistryImage> = {
   },
   "shopping-bags": {
     src: "images/travel/shopping.jpg",
-    alt: "A lively shopping street in Seoul",
+    alt: "Bright aisles inside a supermarket",
     caption: "From convenience stores to malls, shopping options are everywhere.",
     tags: ["shopping", "retail", "store", "bags", "market", "mall", "gift"],
     allowedCategories: ["Shopping"],

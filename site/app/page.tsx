@@ -68,7 +68,7 @@ export default function Home() {
       <JsonLd data={websiteLd} />
 
       {/* ── Hero : 4단(헤드라인·부제·검색·예시+신뢰) + 큰 우측 비주얼 ── */}
-      <SectionBand variant="gradient" className="relative overflow-hidden pt-7 pb-9 sm:pt-12 sm:pb-14">
+      <SectionBand variant="gradient" className="relative overflow-hidden pt-6 pb-7 sm:pt-9 sm:pb-9">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full opacity-[0.05]"
@@ -100,7 +100,7 @@ export default function Home() {
                 />
                 <button
                   type="submit"
-                  className="shrink-0 rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+                  className="shrink-0 rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover"
                 >
                   Search
                 </button>
@@ -139,7 +139,7 @@ export default function Home() {
       </SectionBand>
 
       {/* ── Browse by category (사진 카드 먼저 = 이미지 조기 노출) ── */}
-      <SectionBand variant="white" className="py-8" id="categories">
+      <SectionBand variant="white" className="py-6" id="categories">
         <div className="scroll-mt-20">
           <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
             Browse Korea by category
@@ -172,7 +172,7 @@ export default function Home() {
       </SectionBand>
 
       {/* ── First things travelers ask (Q&A) ── */}
-      <SectionBand variant="sky" className="py-8">
+      <SectionBand variant="sky" className="py-6">
         <PopularGuides posts={popular} />
       </SectionBand>
 
