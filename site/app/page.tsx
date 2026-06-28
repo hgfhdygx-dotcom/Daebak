@@ -7,7 +7,6 @@ import PopularGuides from "@/components/PopularGuides";
 import SearchBar from "@/components/SearchBar";
 import SectionBand from "@/components/SectionBand";
 import SmartThumbnail from "@/components/SmartThumbnail";
-import ClusterIcon from "@/components/ClusterIcon";
 import LineIcon from "@/components/LineIcon";
 import JsonLd from "@/components/JsonLd";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
@@ -54,22 +53,20 @@ const EXAMPLES = ["Incheon Airport to Seoul", "Seoul subway & T-money", "Where t
 // 히어로 우측 여행 비주얼(레지스트리 seoul-skyline → 사진 있으면 사진, 없으면 폴백). 데이터 기반.
 const HERO_VISUAL = {
   slug: "", title: "Seoul skyline and travel", body: "",
-  bigCategory: "Travel", bigCategorySlug: "travel", imageKey: "seoul-skyline",
+  bigCategory: "Travel", bigCategorySlug: "travel",
 } as Post;
 
 export default function Home() {
   const posts = getAllPosts();
   const popular = posts.slice(0, 4);
-  const homeCats = getHomeCategories();
-  const photoCats = homeCats.filter((c) => c.visualKey); // 사진 카드(big)
-  const textCats = homeCats.filter((c) => !c.visualKey); // 폴백 → 컴팩트 링크로 분리
+  const homeCats = getHomeCategories(); // 모든 bigCategory 카드화(MORE 제거). 이미지 미지정이면 fallback.
 
   return (
     <>
       <JsonLd data={websiteLd} />
 
       {/* ── Hero : 4단(헤드라인·부제·검색·예시+신뢰) + 큰 우측 비주얼 ── */}
-      <SectionBand variant="gradient" className="relative overflow-hidden pt-6 pb-7 sm:pt-9 sm:pb-9">
+      <SectionBand variant="gradient" className="relative overflow-hidden pt-5 pb-6 sm:pt-7 sm:pb-7">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full opacity-[0.05]"
@@ -112,7 +109,7 @@ export default function Home() {
           {/* RIGHT — 큰 비주얼(좌우 빈 공간 제거). 모바일은 숨겨 검색 우선. */}
           <div className="group relative hidden lg:block">
             <div className="overflow-hidden rounded-[28px] border border-line shadow-card-hover">
-              <SmartThumbnail post={HERO_VISUAL} aspect="4/3" level="bigCategory" priority />
+              <SmartThumbnail post={HERO_VISUAL} aspect="16/9" level="bigCategory" priority className="max-h-[340px]" />
             </div>
             <div className="pointer-events-none absolute inset-x-4 bottom-4 flex items-center gap-2 rounded-xl border border-line/60 bg-surface/85 px-3.5 py-2 text-[0.75rem] font-medium text-ink-muted backdrop-blur">
               <LineIcon name="compass" className="h-4 w-4 text-accent-ink" />
@@ -129,29 +126,11 @@ export default function Home() {
             Browse Korea by category
           </h2>
           <p className="mt-1.5 text-sm text-ink-muted">Pick a topic — guides, prices, and routes inside.</p>
-          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {photoCats.map((c) => (
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {homeCats.map((c) => (
               <CategoryCard key={c.slug} cat={c} />
             ))}
           </div>
-          {/* 폴백(사진 없는) 카테고리는 컴팩트 링크로 분리 — 사진 카드와 한 줄에 섞지 않음 */}
-          {textCats.length ? (
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <span className="mr-0.5 text-xs font-medium uppercase tracking-wide text-ink-soft">
-                More
-              </span>
-              {textCats.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={c.href}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm text-ink transition-colors hover:border-accent hover:text-accent-ink"
-                >
-                  <ClusterIcon kind={c.icon} className="h-4 w-4 text-accent-ink" />
-                  {c.title}
-                </Link>
-              ))}
-            </div>
-          ) : null}
         </div>
       </SectionBand>
 

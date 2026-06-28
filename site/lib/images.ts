@@ -141,15 +141,6 @@ export const imageRegistry: Record<string, RegistryImage> = {
   },
 };
 
-const _STOP = new Set([
-  "the", "a", "an", "to", "from", "in", "of", "for", "is", "how", "do", "i", "what", "much",
-  "at", "on", "and", "or", "my", "your", "you", "with", "it", "be", "are", "can", "get", "should",
-  "this", "that", "best", "vs", "use", "need", "when", "where", "which", "korea", "korean",
-]);
-function _kw(s?: string): string[] {
-  return (String(s || "").toLowerCase().match(/[a-z0-9]+/g) || []).filter((w) => w.length > 2 && !_STOP.has(w));
-}
-
 export function imageFileExists(src: string): boolean {
   try {
     return fs.existsSync(path.join(process.cwd(), "public", src.replace(/^\//, "")));
@@ -184,33 +175,8 @@ export function pickImage(post: Post): ThumbResult {
       : { mode: "illustration", iconKind, alt: explicit.alt };
   }
 
-  const cat = (post.bigCategory || "").toLowerCase();
-  const cl = (post.cluster || "").toLowerCase();
-  const pt = (post.pageType || "").toLowerCase();
-  const words = new Set<string>([
-    ..._kw(post.title), ..._kw(post.question), ..._kw(post.summary),
-    ..._kw(post.place), ...(post.route || []).flatMap(_kw),
-  ]);
-
-  let best: { img: RegistryImage; score: number } | null = null;
-  for (const img of Object.values(imageRegistry)) {
-    if (img.allowedCategories?.length && !img.allowedCategories.some((c) => c.toLowerCase() === cat)) continue;
-    if (img.allowedClusters?.length && !img.allowedClusters.some((c) => c.toLowerCase() === cl)) continue;
-    if (img.allowedPageTypes?.length && pt && !img.allowedPageTypes.includes(pt)) continue;
-    const hits = img.tags.reduce((n, t) => {
-      const tl = t.toLowerCase();
-      return n + ([...words].some((w) => w === tl || tl.includes(w) || w.includes(tl)) ? 1 : 0);
-    }, 0);
-    const tagScore = img.tags.length ? (hits / Math.min(img.tags.length, 4)) * 100 : 0;
-    const clusterBonus = cl && img.allowedClusters?.some((c) => c.toLowerCase() === cl) ? 20 : 0;
-    const catBonus = cat && img.allowedCategories?.some((c) => c.toLowerCase() === cat) ? 5 : 0;
-    const score = Math.min(100, Math.round(tagScore + clusterBonus + catBonus));
-    if (!best || score > best.score) best = { img, score };
-  }
-
-  if (best && best.score >= 80 && imageFileExists(best.img.src)) {
-    return { mode: "photo", image: best.img, iconKind, alt: best.img.alt, caption: best.img.caption };
-  }
+  // 카테고리/클러스터 이미지는 '명시 imageKey'(= admin에서 사용자가 고른 것)일 때만 사진을 쓴다.
+  // 자동 키워드 매칭은 제거 — 리셋(미지정) 상태에선 항상 흰 패널 fallback(원치 않는 사진 차단).
   return { mode: "illustration", iconKind, alt: fallbackAlt };
 }
 
