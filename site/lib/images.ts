@@ -29,7 +29,7 @@ export type RegistryImage = {
 export const imageRegistry: Record<string, RegistryImage> = {
   "incheon-airport": {
     src: "images/travel/incheon-airport-arrival.jpg",
-    alt: "View of the airport tarmac and planes from an arriving flight",
+    alt: "Airplanes on the airport tarmac in daylight",
     caption: "Incheon Airport is the main arrival point for most first-time visitors to Seoul.",
     tags: ["airport", "incheon", "icn", "arrival", "terminal", "immigration", "departure", "seoul"],
     allowedCategories: ["Travel"], allowedClusters: ["Airport & Arrival"],

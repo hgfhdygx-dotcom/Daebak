@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import AnswerCard from "@/components/AnswerCard";
+import { distinctCardIcons } from "@/lib/cardIntent";
 import { getAllPosts } from "@/lib/posts";
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ export default async function SearchPage({
           .includes(query),
       )
     : [];
+  const resultIcons = distinctCardIcons(results);
 
   return (
     <div className="mx-auto max-w-[720px] px-5 py-10 sm:px-6 sm:py-14">
@@ -49,8 +51,8 @@ export default async function SearchPage({
       )}
 
       <div className="mt-4 grid gap-3">
-        {results.map((p) => (
-          <AnswerCard key={p.slug} post={p} variant="list" />
+        {results.map((p, i) => (
+          <AnswerCard key={p.slug} post={p} variant="list" icon={resultIcons[i]} />
         ))}
       </div>
     </div>

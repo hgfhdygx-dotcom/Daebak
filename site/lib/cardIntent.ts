@@ -129,6 +129,60 @@ export function cardIcon(post: Post): string {
   return cat[(post.bigCategorySlug || "").toLowerCase()] || "pin";
 }
 
+// 인텐트 기반 보조 아이콘(같은 페이지 아이콘 중복 회피용 후보).
+function _intentIcon(intent: string): string | null {
+  if (/COST|PRICE|CHEAP|BUY/.test(intent)) return "card";
+  if (/FAST/.test(intent)) return "train";
+  if (/COMPARE/.test(intent)) return "station";
+  if (/WORTH|BEST/.test(intent)) return "shield";
+  if (/FIRST|LANGUAGE|CULTURE/.test(intent)) return "chat";
+  if (/LATE/.test(intent)) return "sun";
+  return null;
+}
+
+// 한 카드의 그럴듯한 아이콘 후보(우선순위). distinctCardIcons 가 충돌 시 다음 후보로 넘어감.
+function iconCandidates(post: Post): string[] {
+  const text = _haystack(post);
+  const out: string[] = [cardIcon(post)];
+  const ii = _intentIcon(cardIntent(post));
+  if (ii) out.push(ii);
+  if (/\btaxi\b|\bcab\b|택시/.test(text)) out.push("taxi");
+  if (/\bbus\b|limousine|버스|리무진/.test(text)) out.push("bus");
+  if (/arex|ktx|\btrain\b|기차/.test(text)) out.push("train", "station");
+  if (/subway|metro|지하철|t-?money|tmoney/.test(text)) out.push("subway", "card");
+  if (/airport|incheon|flight|plane|terminal|공항/.test(text)) out.push("plane");
+  if (/\bsim\b|esim|wi-?fi/.test(text)) out.push("sim");
+  if (/hotel|stay|neighbo|숙소/.test(text)) out.push("bed");
+  if (/season|weather|날씨/.test(text)) out.push("sun");
+  if (/safe|safety|안전/.test(text)) out.push("shield");
+  if (/jeju|busan|island|day\s?trip|제주|부산/.test(text)) out.push("island");
+  const cat: Record<string, string> = {
+    travel: "travel", food: "food", "k-beauty": "beauty", "k-fashion": "fashion",
+    shopping: "shopping", "korean-rules": "rules", "local-places": "places", products: "products",
+  };
+  const c = cat[(post.bigCategorySlug || "").toLowerCase()];
+  if (c) out.push(c);
+  return out;
+}
+
+// 충돌 시 끌어 쓸 중립 아이콘 풀(전부 ClusterIcon 가 아는 kind).
+const _ICON_POOL = ["pin", "card", "calendar", "sun", "shield", "chat", "island", "bed", "sim", "station"];
+
+/** 한 리스트(=같은 페이지)에서 카드 아이콘을 서로 겹치지 않게 distinct 배정. 데이터 기반·하드코딩 X. */
+export function distinctCardIcons(posts: Post[]): string[] {
+  const used = new Set<string>();
+  return posts.map((p) => {
+    const cands = [...iconCandidates(p), ..._ICON_POOL];
+    for (const c of cands) {
+      if (c && !used.has(c)) {
+        used.add(c);
+        return c;
+      }
+    }
+    return cardIcon(p); // 후보가 전부 소진된 극단적 경우(거의 없음)만 중복 허용
+  });
+}
+
 // ── 칩 표시 헬퍼(데이터 없으면 가짜 숫자 만들지 않음 — 규칙8) ──
 function _glanceValues(post: Post): string {
   const hl = (post.highlights || []).join(" ");

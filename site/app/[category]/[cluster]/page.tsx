@@ -5,6 +5,7 @@ import AnswerCard from "@/components/AnswerCard";
 import Breadcrumb from "@/components/Breadcrumb";
 import SmartThumbnail from "@/components/SmartThumbnail";
 import JsonLd from "@/components/JsonLd";
+import { distinctCardIcons } from "@/lib/cardIntent";
 import {
   categoryTone,
   getCategory,
@@ -72,6 +73,9 @@ export default async function ClusterPage({
     .filter((c) => c.slug !== cl.slug)
     .slice(0, 4);
   const url = `${SITE_URL}/${cat.slug}/${cl.slug}`;
+  // 같은 페이지(대표글 + 발행글) 아이콘 중복 회피
+  const articleIcons = distinctCardIcons([pillar, ...published].filter(Boolean) as Post[]);
+  const pubIconAt = (i: number) => articleIcons[(pillar ? 1 : 0) + i];
 
   return (
     <div className="mx-auto max-w-[1600px] px-5 py-7 sm:px-6 sm:py-10 lg:px-8">
@@ -125,7 +129,7 @@ export default async function ClusterPage({
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">
             Start here
           </p>
-          <AnswerCard post={pillar} variant="featured" />
+          <AnswerCard post={pillar} variant="featured" icon={articleIcons[0]} />
         </section>
       ) : null}
 
@@ -134,8 +138,8 @@ export default async function ClusterPage({
         <section className="mt-8">
           <h2 className="font-display text-lg font-bold tracking-tight">Traveler questions</h2>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            {published.map((p) => (
-              <AnswerCard key={p.slug} post={p} />
+            {published.map((p, i) => (
+              <AnswerCard key={p.slug} post={p} icon={pubIconAt(i)} />
             ))}
           </div>
         </section>

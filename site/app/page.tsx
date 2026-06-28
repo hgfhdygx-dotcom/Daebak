@@ -71,7 +71,7 @@ export default function Home() {
       <JsonLd data={websiteLd} />
 
       {/* ── Hero (sky → white gradient) : 검색 우선 + 우측 여행 비주얼 ── */}
-      <SectionBand variant="gradient" className="relative overflow-hidden pt-5 pb-8 sm:pt-8 sm:pb-12">
+      <SectionBand variant="gradient" className="relative overflow-hidden pt-5 pb-6 sm:pt-7 sm:pb-8">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-[0.06]"
@@ -152,12 +152,12 @@ export default function Home() {
       </SectionBand>
 
       {/* ── First things travelers ask (white) ── */}
-      <SectionBand variant="white" className="py-8">
+      <SectionBand variant="white" className="py-6">
         <PopularGuides posts={popular} />
       </SectionBand>
 
       {/* ── Browse Korea travel topics (sky) ── */}
-      <SectionBand variant="sky" className="py-8" id="categories">
+      <SectionBand variant="sky" className="py-6" id="categories">
         <div className="scroll-mt-20">
           <h2 className="font-display text-lg font-bold tracking-tight">Browse Korea travel topics</h2>
           <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-3 lg:grid-cols-4">

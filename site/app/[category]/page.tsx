@@ -58,6 +58,8 @@ export default async function CategoryPage({
   const clusters = getClustersOf(cat.slug);
   const liveClusters = clusters.filter((cl) => clusterCounts(cl.slug).publishedCount > 0);
   const soonClusters = clusters.filter((cl) => clusterCounts(cl.slug).publishedCount === 0);
+  // 라이브 먼저, 그 다음 coming soon — 한 그리드로 합쳐 균형 배치(외톨이 카드 + 우측 빈 공간 방지)
+  const orderedClusters = [...liveClusters, ...soonClusters];
   const stats = categoryStats(cat.slug);
   const topics = getNavTopics(cat).map((t) => ({ label: t.label, href: resolveTopicHref(t) }));
   const featured = getFeaturedGuide(cat.slug);
@@ -94,33 +96,23 @@ export default async function CategoryPage({
         </section>
       ) : null}
 
-      {/* 가이드 컬렉션 카드 — 라이브 우선 */}
-      {liveClusters.length ? (
+      {/* 가이드 컬렉션 카드 — 라이브 + coming soon 한 그리드(균형) */}
+      {orderedClusters.length ? (
         <section className="mt-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {liveClusters.map((cl) => (
-              <ClusterCard
-                key={cl.id}
-                cluster={cl}
-                categorySlug={cat.slug}
-                counts={clusterCounts(cl.slug)}
-                featuredQuestion={clusterFeaturedQuestion(cl.slug)}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {/* Coming soon 클러스터 — 아래로 */}
-      {soonClusters.length ? (
-        <section className="mt-8">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-            Coming soon
-          </h2>
+          <h2 className="font-display text-lg font-bold tracking-tight">Browse {cat.title} topics</h2>
           <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {soonClusters.map((cl) => (
-              <ClusterCard key={cl.id} cluster={cl} categorySlug={cat.slug} counts={clusterCounts(cl.slug)} />
-            ))}
+            {orderedClusters.map((cl) => {
+              const counts = clusterCounts(cl.slug);
+              return (
+                <ClusterCard
+                  key={cl.id}
+                  cluster={cl}
+                  categorySlug={cat.slug}
+                  counts={counts}
+                  featuredQuestion={counts.publishedCount > 0 ? clusterFeaturedQuestion(cl.slug) : undefined}
+                />
+              );
+            })}
           </div>
         </section>
       ) : null}

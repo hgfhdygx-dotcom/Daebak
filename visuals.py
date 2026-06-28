@@ -42,7 +42,7 @@ _QUERY = {
     "seoul-namsan": "N Seoul Tower blue sky",
     # (Korean Rules / Products: 적합한 '한국' 사진을 못 구해 fallback 아이콘 사용 — taxonomy visualKey 없음)
     # 클러스터(구체적·낮·사람 없음)
-    "incheon-airport": "airport airplane runway daytime",
+    "incheon-airport": "airport runway airplanes sunny day",
     "arex-train": "airport express train railway daytime",
     "airport-taxi": "city taxi cab street daytime",
     "airport-bus": "intercity coach bus highway daytime",
