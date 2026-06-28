@@ -28,17 +28,17 @@ PEXELS_SEARCH = "https://api.pexels.com/v1/search"
 # 키별 검색어(장소/사물 위주 — 인물 회피). 없으면 레지스트리 tags/alt 로 폴백.
 _QUERY = {
     "seoul-skyline": "Seoul city skyline Namsan tower",
-    "incheon-airport": "airport terminal interior architecture",
+    "incheon-airport": "airport airplane runway",
     "arex-train": "airport express train railway",
     "airport-taxi": "city taxi cab street",
     "airport-bus": "intercity coach bus highway",
     "seoul-subway": "Seoul subway station platform empty",
     "tmoney-card": "subway turnstile gate transit",
-    "myeongdong-street": "Seoul shopping street city",
+    "myeongdong-street": "hanok traditional Korean house",
     "korean-food": "Korean food dishes table",
     "k-beauty-skincare": "skincare cosmetics products flatlay",
     "k-fashion-store": "clothing fashion store rack",
-    "shopping-bags": "shopping bags retail store",
+    "shopping-bags": "shopping mall interior",
 }
 
 
@@ -114,7 +114,8 @@ def _query_for(key: str, reg: dict) -> str:
 def _pexels(query: str, api_key: str, per_page: int = 10) -> list:
     url = PEXELS_SEARCH + "?" + urllib.parse.urlencode(
         {"query": query, "orientation": "landscape", "per_page": per_page, "size": "large"})
-    req = urllib.request.Request(url, headers={"Authorization": api_key})
+    req = urllib.request.Request(
+        url, headers={"Authorization": api_key, "User-Agent": "Mozilla/5.0 (Daebak image fetcher)"})
     with urllib.request.urlopen(req, timeout=30) as r:
         data = json.loads(r.read().decode("utf-8"))
     return data.get("photos", []) or []

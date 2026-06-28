@@ -35,7 +35,9 @@ export default function AnswerCard({
   const featured = variant === "featured";
   const updated = post.dateModified || post.datePublished || post.lastUpdatedLabel;
   const src = sourceTone(post);
-  const photo = hasPhoto(post); // 실제 사진 있을 때만 썸네일, 아니면 작은 아이콘 배지
+  // 작은 Q&A 카드는 기본 '이미지 없음'(아이콘 배지). 운영자가 글에 imageKey를 직접 지정한
+  // 예외 경우에만 썸네일 — 자동 매칭으로 같은 사진이 클러스터 카드마다 반복되는 것 방지(§작은 카드엔 이미지 X).
+  const photo = !!post.imageKey && hasPhoto(post);
   // supporting=숫자 칩 / pillar=범위 칩(단일 숫자 금지) / faq=칩 없음
   const numBadges = isPillar
     ? scopeChips(post, 2)

@@ -77,20 +77,20 @@ export default function Home() {
           className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-[0.06]"
           style={{ backgroundImage: "radial-gradient(currentColor 1.5px, transparent 1.5px)", backgroundSize: "16px 16px", color: "var(--color-accent)" }}
         />
-        <div className="relative grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="relative grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_420px]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-ink">
               Daebak · plan your Korea trip
             </p>
-            <h1 className="mt-2 max-w-xl font-display text-[clamp(2.1rem,4.5vw,3rem)] font-bold leading-[1.06] tracking-tight">
+            <h1 className="mt-2 max-w-2xl font-display text-[clamp(2.1rem,4.5vw,3rem)] font-bold leading-[1.06] tracking-tight">
               Korea, made simple.
             </h1>
-            <p className="mt-3 max-w-xl text-base leading-relaxed text-ink-muted">
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-ink-muted">
               Clear answers for your first Korea trip — airport routes, subway tips, prices, local
               guides, and trusted sources.
             </p>
 
-            <form action="/search" role="search" className="mt-5 max-w-xl">
+            <form action="/search" role="search" className="mt-5 max-w-2xl">
               <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 py-3 shadow-card focus-within:border-accent">
                 <span aria-hidden className="text-base text-ink-muted">🔍</span>
                 <input
@@ -160,7 +160,7 @@ export default function Home() {
       <SectionBand variant="sky" className="py-8" id="categories">
         <div className="scroll-mt-20">
           <h2 className="font-display text-lg font-bold tracking-tight">Browse Korea travel topics</h2>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-3 lg:grid-cols-4">
             {homeCats.map((c) => (
               <CategoryCard key={c.slug} cat={c} />
             ))}

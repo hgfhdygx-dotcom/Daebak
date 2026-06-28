@@ -29,7 +29,7 @@ export type RegistryImage = {
 export const imageRegistry: Record<string, RegistryImage> = {
   "incheon-airport": {
     src: "images/travel/incheon-airport-arrival.jpg",
-    alt: "Incheon Airport arrival hall in South Korea",
+    alt: "View of the airport tarmac and planes from an arriving flight",
     caption: "Incheon Airport is the main arrival point for most first-time visitors to Seoul.",
     tags: ["airport", "incheon", "icn", "arrival", "terminal", "immigration", "departure", "seoul"],
     allowedCategories: ["Travel"], allowedClusters: ["Airport & Arrival"],
@@ -77,8 +77,8 @@ export const imageRegistry: Record<string, RegistryImage> = {
   },
   "myeongdong-street": {
     src: "images/travel/myeongdong-shopping-street.jpg",
-    alt: "Myeongdong shopping street in central Seoul",
-    caption: "Myeongdong is a popular first-stay area for shopping, food, and easy subway access.",
+    alt: "Traditional hanok rooftops in a Seoul neighborhood",
+    caption: "Seoul's neighborhoods range from traditional hanok areas to modern districts.",
     tags: ["myeongdong", "shopping", "seoul", "neighborhood", "stay", "street", "hotel"],
     allowedCategories: ["Travel", "Shopping", "Food"], allowedClusters: ["Seoul Stay & Neighborhoods"],
     allowedPageTypes: ["place", "planning", "list", "practical"],
@@ -117,7 +117,7 @@ export const imageRegistry: Record<string, RegistryImage> = {
   },
   "shopping-bags": {
     src: "images/travel/shopping.jpg",
-    alt: "Shopping bags and a retail shopping street",
+    alt: "Inside a modern shopping mall",
     caption: "From convenience stores to malls, shopping options are everywhere.",
     tags: ["shopping", "retail", "store", "bags", "market", "mall", "gift"],
     allowedCategories: ["Shopping"],

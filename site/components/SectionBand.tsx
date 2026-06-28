@@ -24,7 +24,7 @@ export default function SectionBand({
 }) {
   return (
     <section id={id} className={`${BG[variant] || BG.white} ${className}`}>
-      <div className={`mx-auto max-w-[1280px] px-5 sm:px-6 lg:px-8 ${inner}`}>{children}</div>
+      <div className={`mx-auto max-w-[1600px] px-5 sm:px-6 lg:px-8 ${inner}`}>{children}</div>
     </section>
   );
 }

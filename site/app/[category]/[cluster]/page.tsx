@@ -74,7 +74,7 @@ export default async function ClusterPage({
   const url = `${SITE_URL}/${cat.slug}/${cl.slug}`;
 
   return (
-    <div className="mx-auto max-w-[1280px] px-5 py-7 sm:px-6 sm:py-10 lg:px-8">
+    <div className="mx-auto max-w-[1600px] px-5 py-7 sm:px-6 sm:py-10 lg:px-8">
       <JsonLd
         data={buildBreadcrumbLd([
           { name: "Home", url: SITE_URL },
