@@ -3,13 +3,13 @@ import { notFound } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 import CategoryHero from "@/components/CategoryHero";
 import ClusterCard from "@/components/ClusterCard";
-import ComingSoonCluster from "@/components/ComingSoonCluster";
 import FeaturedAnswer from "@/components/FeaturedAnswer";
 import QuickTopicChips from "@/components/QuickTopicChips";
 import JsonLd from "@/components/JsonLd";
 import {
   categoryStats,
   clusterCounts,
+  clusterFeaturedQuestion,
   getActiveCategorySlugs,
   getCategory,
   getClustersOf,
@@ -58,6 +58,7 @@ export default async function CategoryPage({
   const clusters = getClustersOf(cat.slug);
   const liveClusters = clusters.filter((cl) => clusterCounts(cl.slug).publishedCount > 0);
   const soonClusters = clusters.filter((cl) => clusterCounts(cl.slug).publishedCount === 0);
+  const orderedClusters = [...liveClusters, ...soonClusters]; // 라이브 먼저, 한 그리드로 균형
   const stats = categoryStats(cat.slug);
   const topics = getNavTopics(cat).map((t) => ({ label: t.label, href: resolveTopicHref(t) }));
   const featured = getFeaturedGuide(cat.slug);
@@ -65,7 +66,7 @@ export default async function CategoryPage({
   const icon = cat.icon || CATEGORY_ICON_FALLBACK[cat.slug] || "products";
 
   return (
-    <div className="mx-auto max-w-[1760px] px-5 py-7 sm:px-6 sm:py-10 lg:px-8">
+    <div className="mx-auto max-w-[1760px] px-5 py-6 sm:px-6 sm:py-8 lg:px-8">
       <JsonLd
         data={buildBreadcrumbLd([
           { name: "Home", url: SITE_URL },
@@ -87,40 +88,34 @@ export default async function CategoryPage({
 
       <QuickTopicChips topics={topics} />
 
-      {/* 대표 답변 — 2단(좌 QA / 우 추상 패널) */}
+      {/* 대표 답변 — compact featured guide */}
       {featured ? (
-        <section className="mt-7">
+        <section className="mt-6">
           <FeaturedAnswer post={featured} />
         </section>
       ) : null}
 
-      {/* 라이브 토픽 — 풀 카드(가로형). 1개여도 전폭이라 외톨이/빈 공간 없음 */}
-      {liveClusters.length ? (
-        <section className="mt-8">
+      {/* 클러스터 그리드 — 모든 토픽(라이브 먼저) 2~3열 균형. 라이브 1개여도 그리드가 차서 외톨이 없음 */}
+      {orderedClusters.length ? (
+        <section className="mt-7">
           <h2 className="font-display text-lg font-bold tracking-tight">Topics in {cat.title}</h2>
-          <div className="mt-3 grid gap-4">
-            {liveClusters.map((cl) => (
-              <ClusterCard
-                key={cl.id}
-                cluster={cl}
-                categorySlug={cat.slug}
-                counts={clusterCounts(cl.slug)}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {/* Coming soon — 컴팩트 pill(풀 카드 강등 → 미완성 느낌 제거) */}
-      {soonClusters.length ? (
-        <section className="mt-8">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">
-            Coming soon
-          </h3>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {soonClusters.map((cl) => (
-              <ComingSoonCluster key={cl.id} cluster={cl} categorySlug={cat.slug} />
-            ))}
+          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {orderedClusters.map((cl) => {
+              const counts = clusterCounts(cl.slug);
+              const fq =
+                counts.publishedCount > 0
+                  ? clusterFeaturedQuestion(cl.slug)
+                  : cl.pillarQuestions?.[0]?.question;
+              return (
+                <ClusterCard
+                  key={cl.id}
+                  cluster={cl}
+                  categorySlug={cat.slug}
+                  counts={counts}
+                  featuredQuestion={fq}
+                />
+              );
+            })}
           </div>
         </section>
       ) : null}
