@@ -2,6 +2,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import type { ReactNode } from "react";
+import LineIcon from "@/components/LineIcon";
 
 // hast 노드 → 평문(모바일 카드용 셀 텍스트 추출).
 function nodeText(n: any): string {
@@ -60,9 +61,7 @@ function MdTable({ node, children }: { node?: any; children?: ReactNode }) {
 function Callout({ children }: { children?: ReactNode }) {
   return (
     <div className="not-prose my-6 flex gap-3 rounded-2xl border border-line bg-surface px-4 py-4 sm:px-5">
-      <span aria-hidden className="select-none text-lg leading-7">
-        💡
-      </span>
+      <LineIcon name="info" className="mt-0.5 h-5 w-5 shrink-0 text-accent-ink" />
       <div className="text-[0.97rem] leading-relaxed text-ink [&_a]:text-accent-ink [&_a]:underline [&_p]:m-0 [&_p+p]:mt-2 [&_strong]:font-semibold">
         {children}
       </div>

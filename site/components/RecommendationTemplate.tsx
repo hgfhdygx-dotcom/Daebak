@@ -1,5 +1,6 @@
 import AtAGlance from "@/components/AtAGlance";
 import Badge from "@/components/Badge";
+import LineIcon from "@/components/LineIcon";
 import type { Post } from "@/lib/posts";
 
 // 추천형 답변(best / top picks) — topPick 강조 + 추천 기준(criteria). 없으면 핵심 배지로 폴백.
@@ -22,7 +23,10 @@ export default function RecommendationTemplate({ post }: { post: Post }) {
         <div className="border-t-4 border-accent px-5 py-5 sm:px-6">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">Our pick</p>
           {topPick ? (
-            <p className="mt-1 text-lg font-semibold leading-snug text-ink">🏆 {topPick}</p>
+            <p className="mt-1 flex items-start gap-2 text-lg font-semibold leading-snug text-ink">
+              <LineIcon name="sparkles" className="mt-1 h-4 w-4 shrink-0 text-accent-ink" strokeWidth={2} />
+              <span>{topPick}</span>
+            </p>
           ) : null}
           {answer ? (
             <p className="mt-2 text-base leading-relaxed text-ink-muted">{answer}</p>

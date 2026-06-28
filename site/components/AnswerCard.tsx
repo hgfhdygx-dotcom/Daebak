@@ -5,6 +5,7 @@ import Eyebrow from "@/components/Eyebrow";
 import LineIcon from "@/components/LineIcon";
 import MapPin from "@/components/MapPin";
 import SmartThumbnail from "@/components/SmartThumbnail";
+import TrustMeta from "@/components/TrustMeta";
 import { cardIcon, cardIntent, numericHighlights, scopeChips } from "@/lib/cardIntent";
 import { hasPhoto } from "@/lib/images";
 import type { Post } from "@/lib/posts";
@@ -91,6 +92,9 @@ export default function AnswerCard({
             ))}
           </div>
         ) : null}
+
+        {/* 신뢰 메타(Updated · Sources) — primary 칩보다 작고 조용하게 */}
+        <TrustMeta post={post} className="mt-2" />
 
         {post.summary ? (
           <p

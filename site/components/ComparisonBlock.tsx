@@ -1,4 +1,5 @@
 import Badge from "@/components/Badge";
+import LineIcon from "@/components/LineIcon";
 import TransportIcon, { vehicleKind } from "@/components/TransportIcon";
 import type { ParsedTable } from "@/lib/markdownTable";
 
@@ -91,15 +92,15 @@ export default function ComparisonBlock({ table }: { table: ParsedTable }) {
               </p>
             ) : null}
             {c.pros >= 0 && row[c.pros] ? (
-              <p className="mt-1.5 text-sm text-ink">
-                <span aria-hidden className="text-accent">✓ </span>
-                {row[c.pros]}
+              <p className="mt-1.5 flex items-start gap-1.5 text-sm text-ink">
+                <LineIcon name="check" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-trust" strokeWidth={2.25} />
+                <span>{row[c.pros]}</span>
               </p>
             ) : null}
             {c.watch >= 0 && row[c.watch] ? (
-              <p className="mt-1.5 text-sm text-ink-muted">
-                <span aria-hidden>⚠ </span>
-                {row[c.watch]}
+              <p className="mt-1.5 flex items-start gap-1.5 text-sm text-ink-muted">
+                <LineIcon name="alert" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>{row[c.watch]}</span>
               </p>
             ) : null}
           </div>

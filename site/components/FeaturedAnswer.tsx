@@ -2,27 +2,18 @@ import Link from "next/link";
 import Badge from "@/components/Badge";
 import ClusterIcon from "@/components/ClusterIcon";
 import LineIcon from "@/components/LineIcon";
-import { cardIcon, cardIntent, numericHighlights, scopeChips, sourceTone } from "@/lib/cardIntent";
+import TrustMeta from "@/components/TrustMeta";
+import { cardIcon, cardIntent, numericHighlights, scopeChips } from "@/lib/cardIntent";
 import type { Post } from "@/lib/posts";
 
-function fmtDate(d?: string): string {
-  if (!d) return "";
-  const iso = d.length === 7 ? `${d}-01` : d;
-  const dt = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(dt.getTime())) return d;
-  return dt.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-}
-
-// 카테고리/클러스터 상단 '대표 답변' — compact featured guide. 좌: QA + 칩(가격/시간/Updated/Sources),
-// 우: 추상 그래픽 패널(사진 아님 → 같은 페이지 사진 중복 회피). 높이를 줄여 단독 거대 카드처럼 보이지 않게.
+// 카테고리/클러스터 상단 '대표 답변' — compact featured guide. 좌: QA + primary 칩(가격/시간) + 신뢰 메타(Updated·Sources),
+// 우: 추상 그래픽 패널(사진 아님 → 같은 페이지 사진 중복 회피). 카드/상세와 동일한 metadata 규칙(TrustMeta).
 export default function FeaturedAnswer({ post }: { post: Post }) {
   const intent = cardIntent(post);
   const isPillar =
     post.questionType === "pillar" || (!!post.pillarSlug && post.pillarSlug === post.slug);
   const isFaq = post.questionType === "faq";
   const numBadges = isPillar ? scopeChips(post, 2) : !isFaq ? numericHighlights(post, intent, 2) : [];
-  const updated = post.dateModified || post.datePublished || post.lastUpdatedLabel;
-  const src = sourceTone(post);
   const icon = cardIcon(post);
 
   return (
@@ -39,13 +30,14 @@ export default function FeaturedAnswer({ post }: { post: Post }) {
         <h3 className="font-display text-xl font-bold leading-snug tracking-tight text-ink transition-colors group-hover:text-accent-ink sm:text-[1.45rem]">
           {post.question || post.title}
         </h3>
-        <div className="flex flex-wrap gap-1.5">
-          {numBadges.map((b, i) => (
-            <Badge key={i}>{b}</Badge>
-          ))}
-          {updated ? <Badge variant="updated">Updated {fmtDate(updated)}</Badge> : null}
-          {src ? <Badge variant={src.tone === "trust" ? "official" : "default"}>{src.text}</Badge> : null}
-        </div>
+        {numBadges.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {numBadges.map((b, i) => (
+              <Badge key={i}>{b}</Badge>
+            ))}
+          </div>
+        ) : null}
+        <TrustMeta post={post} />
         {post.summary ? (
           <p className="line-clamp-2 max-w-xl text-sm leading-relaxed text-ink-muted">{post.summary}</p>
         ) : null}

@@ -8,7 +8,12 @@ type Name =
   | "arrow-up-right"
   | "compass"
   | "map-pin"
-  | "sparkles";
+  | "sparkles"
+  | "clock"
+  | "shield-check"
+  | "external"
+  | "info"
+  | "alert";
 
 const PATHS: Record<Name, React.ReactNode> = {
   search: (
@@ -44,6 +49,39 @@ const PATHS: Record<Name, React.ReactNode> = {
     </>
   ),
   sparkles: <path d="M12 3v6m0 6v6m9-9h-6m-6 0H3m13.5-6.5-4 4m-3 3-4 4m11 0-4-4m-3-3-4-4" />,
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5V12l3 1.8" />
+    </>
+  ),
+  "shield-check": (
+    <>
+      <path d="M12 3 5 6v5c0 4.2 2.9 7.2 7 8 4.1-.8 7-3.8 7-8V6z" />
+      <path d="m9 11.5 2 2 4-4" />
+    </>
+  ),
+  external: (
+    <>
+      <path d="M14 4h6v6" />
+      <path d="M20 4 10 14" />
+      <path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
+    </>
+  ),
+  info: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" />
+      <path d="M12 8h.01" />
+    </>
+  ),
+  alert: (
+    <>
+      <path d="M10.3 4.3 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </>
+  ),
 };
 
 export default function LineIcon({

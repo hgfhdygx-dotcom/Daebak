@@ -1,5 +1,6 @@
 import Eyebrow from "@/components/Eyebrow";
 import Breadcrumb from "@/components/Breadcrumb";
+import LineIcon from "@/components/LineIcon";
 import MetaLine from "@/components/MetaLine";
 import IntentAnswer from "@/components/IntentAnswer";
 import RouteStrip from "@/components/RouteStrip";
@@ -46,10 +47,13 @@ export default function Article({
 
           {/* 신선도 고지 — 가격·일정·규정이 바뀔 수 있는 글(§20) */}
           {post.needsFreshSource ? (
-            <p className="mt-4 rounded-xl border border-line bg-section px-4 py-3 text-sm text-ink-muted">
-              ⏱️ Prices and schedules can change.
-              {updated ? ` Last updated ${updated}.` : ""} Confirm details on the official source
-              before you travel.
+            <p className="mt-4 flex items-start gap-2 rounded-xl border border-line bg-section px-4 py-3 text-sm text-ink-muted">
+              <LineIcon name="clock" className="mt-0.5 h-4 w-4 shrink-0 text-accent-ink" />
+              <span>
+                Prices and schedules can change.
+                {updated ? ` Last updated ${updated}.` : ""} Confirm details on the official source
+                before you travel.
+              </span>
             </p>
           ) : null}
 
@@ -76,19 +80,19 @@ export default function Article({
               </h2>
               <ul className="mt-3 space-y-2">
                 {post.sources.map((s, i) => (
-                  <li key={i} className="text-sm leading-relaxed">
-                    <span aria-hidden className="mr-1.5 text-xs">
-                      🔗
+                  <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
+                    <LineIcon name="external" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-soft" />
+                    <span>
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="nofollow noreferrer"
+                        className="font-medium text-accent-ink underline underline-offset-2 transition-opacity hover:opacity-80"
+                      >
+                        {s.domain || s.url}
+                      </a>
+                      {s.note ? <span className="text-ink-muted"> — {s.note}</span> : null}
                     </span>
-                    <a
-                      href={s.url}
-                      target="_blank"
-                      rel="nofollow noreferrer"
-                      className="font-medium text-accent-ink underline underline-offset-2 transition-opacity hover:opacity-80"
-                    >
-                      {s.domain || s.url}
-                    </a>
-                    {s.note ? <span className="text-ink-muted"> — {s.note}</span> : null}
                   </li>
                 ))}
               </ul>
