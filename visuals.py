@@ -42,7 +42,7 @@ _QUERY = {
     "seoul-namsan": "N Seoul Tower blue sky",
     # (Korean Rules / Products: 적합한 '한국' 사진을 못 구해 fallback 아이콘 사용 — taxonomy visualKey 없음)
     # 클러스터(구체적·낮·사람 없음)
-    "incheon-airport": "airport runway airplanes sunny day",
+    "incheon-airport": "Korean Air airplane sky",
     "arex-train": "airport express train railway daytime",
     "airport-taxi": "city taxi cab street daytime",
     "airport-bus": "intercity coach bus highway daytime",
@@ -51,9 +51,9 @@ _QUERY = {
     "myeongdong-street": "hanok village Korea sunny day",
     # 큰 카테고리(밝은 사물/음식)
     "korean-food": "Korean food dishes table bright",
-    "k-beauty-skincare": "Korean skincare products white background",
-    "k-fashion-store": "colorful clothes hanging rack bright store",
-    "shopping-bags": "gift boxes ribbon white background flatlay",
+    "k-beauty-skincare": "Korean cosmetics skincare store shop",
+    "k-fashion-store": "colorful clothes clothing rack bright store",
+    "shopping-bags": "Seoul shopping street storefronts daytime",
 }
 
 

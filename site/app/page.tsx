@@ -7,6 +7,7 @@ import PopularGuides from "@/components/PopularGuides";
 import SectionBand from "@/components/SectionBand";
 import SmartThumbnail from "@/components/SmartThumbnail";
 import ClusterIcon from "@/components/ClusterIcon";
+import LineIcon from "@/components/LineIcon";
 import JsonLd from "@/components/JsonLd";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
@@ -46,16 +47,10 @@ const websiteLd = {
   },
 };
 
-// 검색 예시 칩(4개) — UI 로직 아님, 단순 검색 시드.
-const EXAMPLES = [
-  "Incheon Airport to Seoul",
-  "Seoul subway with T-money",
-  "Where to stay in Seoul",
-  "What to buy in Korea",
-];
-const TRUST = ["Local perspective", "Updated guides", "Cited sources"];
+// 검색 예시 칩(시드) + 신뢰 한 줄(예시칩과 한 행에 결합).
+const EXAMPLES = ["Incheon Airport to Seoul", "Seoul subway & T-money", "Where to stay in Seoul"];
 
-// 히어로 우측 여행 비주얼(레지스트리 seoul-skyline → 사진 있으면 사진, 없으면 폴백 일러스트). 데이터 기반.
+// 히어로 우측 여행 비주얼(레지스트리 seoul-skyline → 사진 있으면 사진, 없으면 폴백). 데이터 기반.
 const HERO_VISUAL = {
   slug: "", title: "Seoul skyline and travel", body: "",
   bigCategory: "Travel", bigCategorySlug: "travel", imageKey: "seoul-skyline",
@@ -65,40 +60,43 @@ export default function Home() {
   const posts = getAllPosts();
   const popular = posts.slice(0, 4);
   const homeCats = getHomeCategories();
+  const photoCats = homeCats.filter((c) => c.visualKey); // 사진 카드(big)
+  const textCats = homeCats.filter((c) => !c.visualKey); // 폴백 → 컴팩트 링크로 분리
 
   return (
     <>
       <JsonLd data={websiteLd} />
 
-      {/* ── Hero (sky → white gradient) : 검색 우선 + 우측 여행 비주얼 ── */}
-      <SectionBand variant="gradient" className="relative overflow-hidden pt-5 pb-6 sm:pt-7 sm:pb-8">
+      {/* ── Hero : 4단(헤드라인·부제·검색·예시+신뢰) + 큰 우측 비주얼 ── */}
+      <SectionBand variant="gradient" className="relative overflow-hidden pt-7 pb-9 sm:pt-12 sm:pb-14">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-[0.06]"
-          style={{ backgroundImage: "radial-gradient(currentColor 1.5px, transparent 1.5px)", backgroundSize: "16px 16px", color: "var(--color-accent)" }}
+          className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full opacity-[0.05]"
+          style={{ backgroundImage: "radial-gradient(currentColor 1.5px, transparent 1.5px)", backgroundSize: "18px 18px", color: "var(--color-accent)" }}
         />
-        <div className="relative grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-ink">
-              Daebak · plan your Korea trip
+        <div className="relative grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+          {/* LEFT */}
+          <div className="max-w-xl">
+            <p className="text-[0.78rem] font-semibold uppercase tracking-[0.18em] text-accent-ink">
+              Plan your Korea trip
             </p>
-            <h1 className="mt-2 max-w-2xl font-display text-[clamp(2.1rem,4.5vw,3rem)] font-bold leading-[1.06] tracking-tight">
+            <h1 className="mt-2.5 font-display text-[clamp(2.4rem,5vw,3.6rem)] font-bold leading-[1.03] tracking-tight text-ink">
               Korea, made simple.
             </h1>
-            <p className="mt-3 max-w-2xl text-base leading-relaxed text-ink-muted">
-              Clear answers for your first Korea trip — airport routes, subway tips, prices, local
-              guides, and trusted sources.
+            <p className="mt-4 text-base leading-relaxed text-ink-muted sm:text-lg">
+              Clear, sourced answers for your first trip — airport routes, subway, prices, and local
+              guides, from a Korean local.
             </p>
 
-            <form action="/search" role="search" className="mt-5 max-w-2xl">
-              <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 py-3 shadow-card focus-within:border-accent">
-                <span aria-hidden className="text-base text-ink-muted">🔍</span>
+            <form action="/search" role="search" className="mt-6">
+              <div className="flex items-center gap-2.5 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card transition-colors focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15">
+                <LineIcon name="search" className="h-5 w-5 shrink-0 text-ink-soft" />
                 <input
                   name="q"
                   type="search"
-                  placeholder="Ask about Korea travel, food, shopping, or local places…"
+                  placeholder="Ask about Korea travel, food, or local places…"
                   aria-label="Ask about Korea"
-                  className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-muted"
+                  className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-soft"
                 />
                 <button
                   type="submit"
@@ -109,72 +107,79 @@ export default function Home() {
               </div>
             </form>
 
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
+            {/* 예시 칩 + 신뢰 한 줄(결합) */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               {EXAMPLES.map((e) => (
                 <Link
                   key={e}
                   href={`/search?q=${encodeURIComponent(e)}`}
-                  className="rounded-full border border-line bg-surface px-3 py-1 text-[0.8rem] text-ink-muted transition-colors hover:border-accent hover:text-accent-ink"
+                  className="rounded-full border border-line bg-surface/70 px-3 py-1 text-[0.8rem] text-ink-muted transition-colors hover:border-accent hover:text-accent-ink"
                 >
                   {e}
                 </Link>
               ))}
-            </div>
-
-            <div className="mt-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-medium text-ink-muted">
-              {TRUST.map((t, i) => (
-                <span key={t} className="flex items-center gap-2.5">
-                  {i > 0 ? <span aria-hidden className="text-line">·</span> : null}
-                  <span className="flex items-center gap-1">
-                    <span aria-hidden className="text-accent-ink">✓</span>
-                    {t}
-                  </span>
-                </span>
-              ))}
+              <span className="ml-0.5 hidden items-center gap-1.5 text-xs font-medium text-ink-soft sm:inline-flex">
+                <LineIcon name="check" className="h-3.5 w-3.5 text-trust" strokeWidth={2.25} />
+                Local · sourced · updated
+              </span>
             </div>
           </div>
 
-          {/* 우측 여행 비주얼 카드 + 설명 오버레이 — 모바일은 숨겨 검색 우선, 데스크탑만 표시 */}
+          {/* RIGHT — 큰 비주얼(좌우 빈 공간 제거). 모바일은 숨겨 검색 우선. */}
           <div className="group relative hidden lg:block">
-            <SmartThumbnail
-              post={HERO_VISUAL}
-              aspect="4/3"
-              level="bigCategory"
-              priority
-              className="rounded-3xl border border-line shadow-card"
-            />
-            <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center gap-1.5 rounded-xl bg-surface/85 px-3 py-2 text-[0.72rem] font-medium text-ink-muted backdrop-blur">
-              <ClusterIcon kind="plane" className="h-3.5 w-3.5 text-accent-ink" />
+            <div className="overflow-hidden rounded-[28px] border border-line shadow-card-hover">
+              <SmartThumbnail post={HERO_VISUAL} aspect="4/3" level="bigCategory" priority />
+            </div>
+            <div className="pointer-events-none absolute inset-x-4 bottom-4 flex items-center gap-2 rounded-xl border border-line/60 bg-surface/85 px-3.5 py-2 text-[0.75rem] font-medium text-ink-muted backdrop-blur">
+              <LineIcon name="compass" className="h-4 w-4 text-accent-ink" />
               Airport → Seoul → neighborhoods → stay
             </div>
           </div>
         </div>
       </SectionBand>
 
-      {/* ── First things travelers ask (white) ── */}
-      <SectionBand variant="white" className="py-6">
-        <PopularGuides posts={popular} />
-      </SectionBand>
-
-      {/* ── Browse Korea travel topics (sky) ── */}
-      <SectionBand variant="sky" className="py-6" id="categories">
+      {/* ── Browse by category (사진 카드 먼저 = 이미지 조기 노출) ── */}
+      <SectionBand variant="white" className="py-8" id="categories">
         <div className="scroll-mt-20">
-          <h2 className="font-display text-lg font-bold tracking-tight">Browse Korea travel topics</h2>
-          <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-            {homeCats.map((c) => (
+          <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
+            Browse Korea by category
+          </h2>
+          <p className="mt-1.5 text-sm text-ink-muted">Pick a topic — guides, prices, and routes inside.</p>
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {photoCats.map((c) => (
               <CategoryCard key={c.slug} cat={c} />
             ))}
           </div>
+          {/* 폴백(사진 없는) 카테고리는 컴팩트 링크로 분리 — 사진 카드와 한 줄에 섞지 않음 */}
+          {textCats.length ? (
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <span className="mr-0.5 text-xs font-medium uppercase tracking-wide text-ink-soft">
+                More
+              </span>
+              {textCats.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={c.href}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm text-ink transition-colors hover:border-accent hover:text-accent-ink"
+                >
+                  <ClusterIcon kind={c.icon} className="h-4 w-4 text-accent-ink" />
+                  {c.title}
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </div>
       </SectionBand>
 
-      {/* (재활성 가능) Explore by neighborhood / Plan by what you need 섹션은 일시 제거 —
-          컴포넌트(ExploreByPlace / ExploreByNeed)는 보존, 홈 렌더에서만 제외. */}
+      {/* ── First things travelers ask (Q&A) ── */}
+      <SectionBand variant="sky" className="py-8">
+        <PopularGuides posts={popular} />
+      </SectionBand>
 
-      {/* ── Product teaser + For Brands (white, 하단) ── */}
+      {/* ── Product teaser + For Brands ── */}
       <SectionBand variant="white" className="py-8" id="for-brands">
         <div className="grid scroll-mt-20 gap-4 lg:grid-cols-2">
-          <div className="flex flex-col rounded-2xl border border-line bg-section p-5">
+          <div className="flex flex-col rounded-2xl border border-line bg-section p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">
               Korean product guides
             </p>
@@ -186,13 +191,14 @@ export default function Home() {
             </p>
             <Link
               href="/search?q=what+to+buy+in+Korea"
-              className="mt-3 inline-flex w-fit rounded-full border border-accent px-4 py-1.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent hover:text-white"
+              className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-accent px-4 py-1.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent hover:text-white"
             >
-              Ask what to buy →
+              Ask what to buy
+              <LineIcon name="arrow-right" className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="flex flex-col rounded-2xl border border-line bg-surface p-5">
+          <div className="flex flex-col rounded-2xl border border-line bg-surface p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">
               Ask · or list your brand
             </p>
@@ -202,9 +208,10 @@ export default function Home() {
             <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
               Got a question, or a Korean brand to put in front of foreigners? Just DM me.
             </p>
-            <a href={INSTAGRAM} target="_blank" rel="noreferrer" className="mt-auto inline-flex w-fit pt-3">
-              <span className="inline-flex rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover">
+            <a href={INSTAGRAM} target="_blank" rel="noreferrer" className="mt-auto inline-flex w-fit pt-4">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover">
                 Message on Instagram
+                <LineIcon name="arrow-up-right" className="h-4 w-4" />
               </span>
             </a>
           </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./globals.css";
 import CategoriesMenu from "@/components/CategoriesMenu";
 import ClusterIcon from "@/components/ClusterIcon";
+import LineIcon from "@/components/LineIcon";
 import { getCategoryNav } from "@/lib/posts";
 import { groupByMenu } from "@/lib/presentation";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
@@ -64,9 +65,7 @@ function SiteHeader() {
         <div className="ml-auto flex items-center gap-2">
           <form action="/search" role="search" className="hidden sm:block">
             <div className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5">
-              <span aria-hidden className="text-sm text-ink-muted">
-                🔍
-              </span>
+              <LineIcon name="search" className="h-4 w-4 shrink-0 text-ink-soft" />
               <input
                 name="q"
                 type="search"
@@ -82,7 +81,7 @@ function SiteHeader() {
             aria-label="Search Korea guides"
             className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-ink-muted transition-colors hover:text-accent-ink sm:hidden"
           >
-            <span aria-hidden>🔍</span>
+            <LineIcon name="search" className="h-[18px] w-[18px]" />
           </Link>
 
           {/* 모바일 메뉴 (네이티브 details — JS 0) */}
@@ -91,7 +90,7 @@ function SiteHeader() {
               aria-label="Menu"
               className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full border border-line text-ink-muted [&::-webkit-details-marker]:hidden"
             >
-              <span aria-hidden>☰</span>
+              <LineIcon name="menu" className="h-[18px] w-[18px]" />
             </summary>
             <div className="absolute right-0 z-50 mt-2 max-h-[72vh] w-64 overflow-auto rounded-2xl border border-line bg-surface p-2 shadow-lg">
               {navOrdered.map((c) => (

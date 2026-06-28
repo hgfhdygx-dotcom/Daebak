@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import AnswerCard from "@/components/AnswerCard";
 import Breadcrumb from "@/components/Breadcrumb";
 import CategoryHero from "@/components/CategoryHero";
 import ClusterCard from "@/components/ClusterCard";
+import ComingSoonCluster from "@/components/ComingSoonCluster";
+import FeaturedAnswer from "@/components/FeaturedAnswer";
 import QuickTopicChips from "@/components/QuickTopicChips";
 import JsonLd from "@/components/JsonLd";
 import {
   categoryStats,
   clusterCounts,
-  clusterFeaturedQuestion,
   getActiveCategorySlugs,
   getCategory,
   getClustersOf,
@@ -58,8 +58,6 @@ export default async function CategoryPage({
   const clusters = getClustersOf(cat.slug);
   const liveClusters = clusters.filter((cl) => clusterCounts(cl.slug).publishedCount > 0);
   const soonClusters = clusters.filter((cl) => clusterCounts(cl.slug).publishedCount === 0);
-  // 라이브 먼저, 그 다음 coming soon — 한 그리드로 합쳐 균형 배치(외톨이 카드 + 우측 빈 공간 방지)
-  const orderedClusters = [...liveClusters, ...soonClusters];
   const stats = categoryStats(cat.slug);
   const topics = getNavTopics(cat).map((t) => ({ label: t.label, href: resolveTopicHref(t) }));
   const featured = getFeaturedGuide(cat.slug);
@@ -89,30 +87,40 @@ export default async function CategoryPage({
 
       <QuickTopicChips topics={topics} />
 
-      {/* 대표 라이브 가이드(자동 선택) */}
+      {/* 대표 답변 — 2단(좌 QA / 우 추상 패널) */}
       {featured ? (
-        <section className="mt-6">
-          <AnswerCard post={featured} variant="featured" />
+        <section className="mt-7">
+          <FeaturedAnswer post={featured} />
         </section>
       ) : null}
 
-      {/* 가이드 컬렉션 카드 — 라이브 + coming soon 한 그리드(균형) */}
-      {orderedClusters.length ? (
-        <section className="mt-6">
-          <h2 className="font-display text-lg font-bold tracking-tight">Browse {cat.title} topics</h2>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {orderedClusters.map((cl) => {
-              const counts = clusterCounts(cl.slug);
-              return (
-                <ClusterCard
-                  key={cl.id}
-                  cluster={cl}
-                  categorySlug={cat.slug}
-                  counts={counts}
-                  featuredQuestion={counts.publishedCount > 0 ? clusterFeaturedQuestion(cl.slug) : undefined}
-                />
-              );
-            })}
+      {/* 라이브 토픽 — 풀 카드(가로형). 1개여도 전폭이라 외톨이/빈 공간 없음 */}
+      {liveClusters.length ? (
+        <section className="mt-8">
+          <h2 className="font-display text-lg font-bold tracking-tight">Topics in {cat.title}</h2>
+          <div className="mt-3 grid gap-4">
+            {liveClusters.map((cl) => (
+              <ClusterCard
+                key={cl.id}
+                cluster={cl}
+                categorySlug={cat.slug}
+                counts={clusterCounts(cl.slug)}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Coming soon — 컴팩트 pill(풀 카드 강등 → 미완성 느낌 제거) */}
+      {soonClusters.length ? (
+        <section className="mt-8">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">
+            Coming soon
+          </h3>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {soonClusters.map((cl) => (
+              <ComingSoonCluster key={cl.id} cluster={cl} categorySlug={cat.slug} />
+            ))}
           </div>
         </section>
       ) : null}

@@ -29,7 +29,7 @@ export type RegistryImage = {
 export const imageRegistry: Record<string, RegistryImage> = {
   "incheon-airport": {
     src: "images/travel/incheon-airport-arrival.jpg",
-    alt: "Airplanes on the airport tarmac in daylight",
+    alt: "A Korean Air plane against a clear blue sky",
     caption: "Incheon Airport is the main arrival point for most first-time visitors to Seoul.",
     tags: ["airport", "incheon", "icn", "arrival", "terminal", "immigration", "departure", "seoul"],
     allowedCategories: ["Travel"], allowedClusters: ["Airport & Arrival"],
@@ -101,7 +101,7 @@ export const imageRegistry: Record<string, RegistryImage> = {
   },
   "k-beauty-skincare": {
     src: "images/travel/k-beauty-skincare.jpg",
-    alt: "Korean skincare and cosmetics products",
+    alt: "Inside a Korean cosmetics and skincare store",
     caption: "K-beauty is known for layered skincare and daily sunscreen.",
     tags: ["skincare", "cosmetics", "beauty", "makeup", "serum", "sunscreen", "product"],
     allowedCategories: ["K-Beauty"],
@@ -117,7 +117,7 @@ export const imageRegistry: Record<string, RegistryImage> = {
   },
   "shopping-bags": {
     src: "images/travel/shopping.jpg",
-    alt: "Shopping bags and gift boxes",
+    alt: "A lively shopping street in Seoul",
     caption: "From convenience stores to malls, shopping options are everywhere.",
     tags: ["shopping", "retail", "store", "bags", "market", "mall", "gift"],
     allowedCategories: ["Shopping"],

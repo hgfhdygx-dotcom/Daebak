@@ -2,6 +2,7 @@ import Link from "next/link";
 import Badge from "@/components/Badge";
 import ClusterIcon from "@/components/ClusterIcon";
 import Eyebrow from "@/components/Eyebrow";
+import LineIcon from "@/components/LineIcon";
 import MapPin from "@/components/MapPin";
 import SmartThumbnail from "@/components/SmartThumbnail";
 import { cardIcon, cardIntent, numericHighlights, scopeChips } from "@/lib/cardIntent";
@@ -110,7 +111,7 @@ export default function AnswerCard({
           }
         >
           Read answer
-          <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
+          <LineIcon name="arrow-right" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
         </span>
       </div>
     </Link>
