@@ -25,20 +25,35 @@ import storage
 
 PEXELS_SEARCH = "https://api.pexels.com/v1/search"
 
-# 키별 검색어(장소/사물 위주 — 인물 회피). 없으면 레지스트리 tags/alt 로 폴백.
+# 키별 검색어 — Daebak 청량한 여행 무드 기준(전역 규칙, 카드별 수동교체 금지):
+#  · 밝은 낮/맑은 하늘/밝은 실내 (밤·노을·어두운 사진 금지, 특히 Hero)
+#  · 카테고리/클러스터 "의미"에 정확히 맞는 사물/장소 (장식용 금지)
+#  · 인물/얼굴/군중/모델/브랜드 로고/워터마크 없음
+#  · 같은 화면 중복 금지 → Hero(skyline) ≠ Travel ≠ Local Places 서로 다른 키
+# 후보가 기준 미달이면 사진 대신 fallback(흰 패널)을 쓴다(억지 사진보다 나음).
+# 모든 후보에 "no people, no faces, no crowd, no watermark" 의도를 깔고 검색.
+_NO_PEOPLE = "no people no crowd"
 _QUERY = {
-    "seoul-skyline": "Seoul city skyline Namsan tower",
-    "incheon-airport": "airport airplane runway",
-    "arex-train": "airport express train railway",
-    "airport-taxi": "city taxi cab street",
-    "airport-bus": "intercity coach bus highway",
+    # Hero(밝은 낮 스카이라인) — Travel/Local Places 와 다른 이미지로 분리
+    "seoul-skyline": "Seoul city skyline daytime blue sky",
+    # Travel 큰 카테고리(한강 맑은 낮·컬러) — 공항·스카이라인과 중복 회피
+    "hangang-river": "Seoul Han river blue sky sunny",
+    # Local Places 큰 카테고리(맑은 낮 랜드마크)
+    "seoul-namsan": "N Seoul Tower blue sky",
+    # (Korean Rules / Products: 적합한 '한국' 사진을 못 구해 fallback 아이콘 사용 — taxonomy visualKey 없음)
+    # 클러스터(구체적·낮·사람 없음)
+    "incheon-airport": "airport airplane runway daytime",
+    "arex-train": "airport express train railway daytime",
+    "airport-taxi": "city taxi cab street daytime",
+    "airport-bus": "intercity coach bus highway daytime",
     "seoul-subway": "Seoul subway station platform empty",
-    "tmoney-card": "subway turnstile gate transit",
-    "myeongdong-street": "hanok traditional Korean house",
-    "korean-food": "Korean food dishes table",
-    "k-beauty-skincare": "skincare cosmetics products flatlay",
-    "k-fashion-store": "clothing fashion store rack",
-    "shopping-bags": "shopping mall interior",
+    "tmoney-card": "subway turnstile gate transit card",
+    "myeongdong-street": "hanok village Korea sunny day",
+    # 큰 카테고리(밝은 사물/음식)
+    "korean-food": "Korean food dishes table bright",
+    "k-beauty-skincare": "Korean skincare products white background",
+    "k-fashion-store": "colorful clothes hanging rack bright store",
+    "shopping-bags": "gift boxes ribbon white background flatlay",
 }
 
 

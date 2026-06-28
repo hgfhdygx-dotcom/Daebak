@@ -85,7 +85,7 @@ export const imageRegistry: Record<string, RegistryImage> = {
   },
   "seoul-skyline": {
     src: "images/travel/seoul-skyline-view.jpg",
-    alt: "Seoul city skyline with N Seoul Tower",
+    alt: "Seoul city skyline in daylight",
     caption: "Seoul blends modern districts with palaces, rivers, and mountains.",
     tags: ["seoul", "skyline", "city", "tower", "view", "korea", "travel", "hangang", "river"],
     allowedCategories: ["Travel", "Local Places"],
@@ -117,11 +117,27 @@ export const imageRegistry: Record<string, RegistryImage> = {
   },
   "shopping-bags": {
     src: "images/travel/shopping.jpg",
-    alt: "Inside a modern shopping mall",
+    alt: "Shopping bags and gift boxes",
     caption: "From convenience stores to malls, shopping options are everywhere.",
     tags: ["shopping", "retail", "store", "bags", "market", "mall", "gift"],
     allowedCategories: ["Shopping"],
     allowedPageTypes: ["list", "place", "practical"],
+  },
+  "hangang-river": {
+    src: "images/travel/hangang-river.jpg",
+    alt: "The Han River and Seoul in daylight",
+    caption: "The Han River runs through Seoul with parks and open city views.",
+    tags: ["hangang", "han", "river", "seoul", "travel", "city", "park", "daytime"],
+    allowedCategories: ["Travel"],
+    allowedPageTypes: ["place", "planning", "list", "practical"],
+  },
+  "seoul-namsan": {
+    src: "images/travel/seoul-namsan.jpg",
+    alt: "N Seoul Tower on Namsan in daylight",
+    caption: "Namsan and landmarks anchor many Seoul neighborhoods.",
+    tags: ["namsan", "tower", "seoul", "landmark", "view", "place", "daytime"],
+    allowedCategories: ["Local Places", "Travel"],
+    allowedPageTypes: ["place", "planning", "list"],
   },
 };
 

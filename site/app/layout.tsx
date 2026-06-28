@@ -37,28 +37,17 @@ function SiteHeader() {
       <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-4 px-5 sm:px-6 lg:px-8">
         {/* 왼쪽: 브랜드 + 만든이 + 메뉴 */}
         <div className="flex items-center gap-5">
-          <div className="flex flex-col justify-center leading-none">
-            <Link href="/" aria-label={SITE_NAME} className="inline-flex items-center gap-2">
+          <div className="flex items-center leading-none">
+            <Link href="/" aria-label={SITE_NAME} className="inline-flex">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/daebak-logo-mark.svg"
+                src="/daebak-logo-horizontal.svg"
                 alt={SITE_NAME}
-                width={36}
-                height={36}
-                className="h-9 w-9 rounded-lg border border-line object-contain shadow-sm"
+                width={89}
+                height={32}
+                className="h-8 w-auto"
               />
-              <span className="font-display text-lg font-bold tracking-tight text-ink">
-                {SITE_NAME}
-              </span>
             </Link>
-            <a
-              href={INSTAGRAM}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-0.5 text-[0.65rem] font-medium text-ink-muted transition-colors hover:text-accent-ink"
-            >
-              by @kor_punch_boy
-            </a>
           </div>
           <nav className="hidden items-center gap-5 text-sm sm:flex">
             <CategoriesMenu categories={nav} />
