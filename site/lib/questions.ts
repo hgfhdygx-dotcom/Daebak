@@ -30,6 +30,7 @@ export type PublicQuestionView = {
   createdAt: string;
   publishedUrl?: string;
   answerSummary?: string;
+  displayId?: string; // "Question 000001" (표시용 — 조회 키 아님)
 };
 
 export class RateLimitError extends Error {}
@@ -85,13 +86,15 @@ export function validateSubmission(input: { question?: string; website?: string 
 }
 
 // ── Supabase REST (PostgREST) ──
-async function sbInsert(row: Record<string, unknown>): Promise<void> {
+async function sbInsert(row: Record<string, unknown>): Promise<Record<string, unknown>> {
   const r = await fetch(`${SB_URL}/rest/v1/questions`, {
     method: "POST",
-    headers: sbHeaders({ Prefer: "return=minimal" }),
+    headers: sbHeaders({ Prefer: "return=representation" }),
     body: JSON.stringify(row),
   });
   if (!r.ok) throw new Error(`supabase insert ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  const data = (await r.json()) as Record<string, unknown>[];
+  return data[0] || {}; // display_id 는 trigger 가 채워서 돌려줌
 }
 
 async function sbCountRecentByIp(ipHash: string, sinceIso: string): Promise<number> {
@@ -105,7 +108,7 @@ async function sbCountRecentByIp(ipHash: string, sinceIso: string): Promise<numb
 async function sbSelectByToken(token: string): Promise<Record<string, string> | null> {
   const qs = new URLSearchParams({
     public_token: `eq.${token}`,
-    select: "question,status,category_guess,published_url,answer_summary,created_at",
+    select: "question,status,category_guess,published_url,answer_summary,created_at,display_id",
     limit: "1",
   });
   const r = await fetch(`${SB_URL}/rest/v1/questions?${qs}`, { headers: sbHeaders() });
@@ -117,7 +120,7 @@ async function sbSelectByToken(token: string): Promise<Record<string, string> | 
 // ── 공개 API(호출부가 쓰는 것) ──
 export async function createQuestion(
   input: CreateQuestionInput,
-): Promise<{ publicToken: string; statusPath: string }> {
+): Promise<{ publicToken: string; statusPath: string; displayId: string }> {
   if (!isConfigured()) throw new NotConfiguredError();
   const ipHash = input.ip ? hashIp(input.ip) : null;
   if (ipHash) {
@@ -126,7 +129,7 @@ export async function createQuestion(
   }
   const token = makeToken();
   const intent = guessIntent(input.question);
-  await sbInsert({
+  const inserted = await sbInsert({
     question: input.question.trim(),
     normalized_question: normalize(input.question),
     language: input.language || "en",
@@ -143,7 +146,11 @@ export async function createQuestion(
     notification_status: "none",
     ip_hash: ipHash,
   });
-  return { publicToken: token, statusPath: `/questions/status/${token}` };
+  return {
+    publicToken: token,
+    statusPath: `/questions/status/${token}`,
+    displayId: (inserted.display_id as string) || "",
+  };
 }
 
 export async function getPublicQuestion(token: string): Promise<PublicQuestionView | null> {
@@ -157,5 +164,6 @@ export async function getPublicQuestion(token: string): Promise<PublicQuestionVi
     createdAt: row.created_at,
     publishedUrl: row.published_url || undefined,
     answerSummary: row.answer_summary || undefined,
+    displayId: row.display_id || undefined,
   };
 }

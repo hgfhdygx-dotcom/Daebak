@@ -49,18 +49,18 @@ export async function POST(req: NextRequest) {
   };
 
   try {
-    const { publicToken, statusPath } = await createQuestion(input);
+    const { publicToken, statusPath, displayId } = await createQuestion(input);
     // (선택) 새 질문 즉시 알림 — Discord/Slack 호환. 실패해도 절대 막지 않음(fire-and-forget).
     const hook = process.env.QUESTION_WEBHOOK_URL;
     if (hook) {
-      const msg = `New Daebak question: ${question.slice(0, 300)}`;
+      const msg = `New Daebak question ${displayId}: ${question.slice(0, 300)}`;
       fetch(hook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: msg, text: msg }),
       }).catch(() => {});
     }
-    return NextResponse.json({ ok: true, publicToken, statusPath });
+    return NextResponse.json({ ok: true, publicToken, statusPath, displayId });
   } catch (e) {
     if (e instanceof RateLimitError) return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
     if (e instanceof NotConfiguredError) return NextResponse.json({ ok: false, error: "not_configured" }, { status: 503 });

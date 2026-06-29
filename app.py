@@ -845,6 +845,7 @@ _Q_CATS = ["all", "K-Beauty", "Shopping Apps & Stores", "Korean Brands & Product
 
 def _render_question_detail(q: dict):
     qid = q["id"]
+    st.markdown(f"**{q.get('display_id') or ''}**")
     st.markdown(f"### {q.get('question', '')}")
     m = st.columns(3)
     m[0].caption(f"status **{q.get('status')}** · priority {q.get('priority')}")
@@ -952,7 +953,7 @@ def render_questions():
     for q in rows[:60]:
         with st.container(border=True):
             c = st.columns([6, 2, 1])
-            c[0].markdown(f"**{q.get('question', '')}**")
+            c[0].markdown(f"**{q.get('display_id') or ''}** — {q.get('question', '')}")
             c[0].caption(
                 f"{q.get('category_guess') or '—'} · {q.get('intent_guess') or '—'} · "
                 f"{q.get('source_component') or ''} · {(q.get('created_at') or '')[:10]}"

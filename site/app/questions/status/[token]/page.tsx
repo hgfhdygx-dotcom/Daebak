@@ -52,7 +52,9 @@ export default async function StatusPage({ params }: { params: Promise<{ token: 
 
   return (
     <div className="mx-auto max-w-[640px] px-5 py-12 sm:px-8 lg:py-16">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">Your question</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+        Your question{q.displayId ? ` · ${q.displayId}` : ""}
+      </p>
 
       <div className="mt-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
         <p className="font-display text-lg font-bold leading-snug tracking-tight text-ink">

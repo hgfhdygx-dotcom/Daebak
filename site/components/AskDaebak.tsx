@@ -5,7 +5,7 @@ import LineIcon from "@/components/LineIcon";
 
 // 로그인 없이 질문 제출 — 검색으로 답이 없을 때 자연스럽게. 제출 후 status 링크(+이메일 안내).
 // 키 미설정/스팸/길이 등은 친절 메시지로. honeypot(website) 로 봇 차단.
-type Result = { statusPath: string; hadEmail: boolean } | null;
+type Result = { statusPath: string; hadEmail: boolean; displayId?: string } | null;
 
 function messageFor(error?: string): string {
   switch (error) {
@@ -57,7 +57,7 @@ export default function AskDaebak({
         }),
       });
       const data = await res.json();
-      if (data.ok) setResult({ statusPath: data.statusPath || "", hadEmail: Boolean(email) });
+      if (data.ok) setResult({ statusPath: data.statusPath || "", hadEmail: Boolean(email), displayId: data.displayId });
       else setError(messageFor(data.error));
     } catch {
       setError("Something went wrong. Please try again.");
@@ -81,6 +81,11 @@ export default function AskDaebak({
           <LineIcon name="check" className="h-4 w-4" strokeWidth={2.25} />
           Question sent
         </p>
+        {result.displayId ? (
+          <p className="mt-2 text-sm font-semibold text-ink">
+            Your question ID: <span className="text-accent-ink">{result.displayId}</span>
+          </p>
+        ) : null}
         <p className="mt-2 text-sm leading-relaxed text-ink-muted">
           {result.hadEmail
             ? "Thanks — your question was sent to Daebak. If we publish an answer, we may email you the link. You can also check the status here."

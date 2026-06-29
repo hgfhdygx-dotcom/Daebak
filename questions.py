@@ -53,7 +53,8 @@ def list_questions(status: str | None = None, category: str | None = None,
     if category and category != "all":
         params["category_guess"] = f"eq.{category}"
     if search:
-        params["question"] = f"ilike.*{search}*"
+        # 질문 본문 OR displayId 로 검색(예: "Question 000001", "000001", 키워드)
+        params["or"] = f"(question.ilike.*{search}*,display_id.ilike.*{search}*)"
     try:
         rows, _ = _request("GET", "questions", params)
         return rows
@@ -157,13 +158,15 @@ def send_answer_email(q: dict) -> str:
     url = (q.get("published_url") or "").strip()
     if not to or not url:
         return "skipped"
+    did = q.get("display_id") or ""
     body = {
         "from": config.QUESTION_FROM_EMAIL,
         "to": [to],
-        "subject": "Daebak answered your Korea question",
+        "subject": "Daebak answered your Korea question" + (f" ({did})" if did else ""),
         "text": (
             "Hi, thanks for asking Daebak.\n\n"
-            "We published an answer to your question:\n"
+            + (f"Your question ID: {did}\n\n" if did else "")
+            + "We published an answer to your question:\n"
             f"{q.get('question', '')}\n\n"
             f"Read the answer here: {url}\n\n"
             f"You can also check your question status here: {status_url(q.get('public_token', ''))}\n"
