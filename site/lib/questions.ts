@@ -153,6 +153,28 @@ export async function createQuestion(
   };
 }
 
+// 진단(키/데이터 노출 없음) — /api/ask GET 가 호출. 설정/연결/테이블 상태만 안전하게 보고.
+export async function diagnose(): Promise<{ configured: boolean; ok: boolean; status?: number; hint: string }> {
+  if (!isConfigured()) {
+    return {
+      configured: false,
+      ok: false,
+      hint: "SUPABASE_URL / SUPABASE_SERVICE_KEY are not set on this deployment. Add them in Vercel → Settings → Environment Variables, then Redeploy.",
+    };
+  }
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/questions?select=id&limit=1`, { headers: sbHeaders() });
+    if (r.ok) return { configured: true, ok: true, status: 200, hint: "Supabase connected and the questions table is reachable — submissions should work." };
+    if (r.status === 401 || r.status === 403)
+      return { configured: true, ok: false, status: r.status, hint: "Auth failed — you likely pasted the anon/public key. Use the service_role key (Supabase → Settings → API → service_role)." };
+    if (r.status === 404)
+      return { configured: true, ok: false, status: r.status, hint: "questions table not found — run supabase/questions.sql in the Supabase SQL Editor." };
+    return { configured: true, ok: false, status: r.status, hint: `Supabase returned ${r.status}. Check SUPABASE_URL and that the SQL ran.` };
+  } catch {
+    return { configured: true, ok: false, hint: "Could not reach Supabase — check SUPABASE_URL (should look like https://xxxx.supabase.co)." };
+  }
+}
+
 export async function getPublicQuestion(token: string): Promise<PublicQuestionView | null> {
   if (!isConfigured() || !token) return null;
   const row = await sbSelectByToken(token);

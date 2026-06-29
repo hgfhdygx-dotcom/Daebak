@@ -5,6 +5,7 @@ import {
   validateSubmission,
   isConfigured,
   guessIntent,
+  diagnose,
   RateLimitError,
   NotConfiguredError,
   type CreateQuestionInput,
@@ -67,6 +68,12 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     if (e instanceof RateLimitError) return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
     if (e instanceof NotConfiguredError) return NextResponse.json({ ok: false, error: "not_configured" }, { status: 503 });
+    console.error("[/api/ask] submit failed:", e); // Vercel 함수 로그에서 실제 원인(예: supabase insert 401) 확인
     return NextResponse.json({ ok: false, error: "server_error" }, { status: 500 });
   }
+}
+
+// 진단용 — 브라우저에서 /api/ask 를 열면 설정/연결/테이블 상태를 JSON 으로 보여줌(키·데이터 노출 없음).
+export async function GET() {
+  return NextResponse.json(await diagnose());
 }
