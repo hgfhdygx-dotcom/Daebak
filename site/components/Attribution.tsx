@@ -14,7 +14,7 @@ export default function Attribution({
 }) {
   const base =
     tone === "overlay"
-      ? "pointer-events-auto inline-flex max-w-[92%] items-center gap-1 truncate rounded-md bg-ink/55 px-1.5 py-0.5 text-[0.62rem] font-medium leading-none text-white/90 backdrop-blur-sm"
+      ? "pointer-events-auto inline-flex max-w-[92%] items-center gap-1 truncate rounded-md bg-black/55 px-1.5 py-0.5 text-[0.62rem] font-medium leading-none text-white/90 backdrop-blur-sm"
       : "inline-flex items-center gap-1 text-[0.7rem] text-ink-soft";
   const link =
     tone === "overlay"

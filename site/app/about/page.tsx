@@ -20,7 +20,7 @@ export default function AboutPage() {
         About {SITE_NAME}
       </h1>
 
-      <div className="prose prose-neutral mt-8 max-w-none prose-headings:font-display prose-headings:tracking-tight prose-a:text-accent-ink">
+      <div className="prose prose-neutral mt-8 max-w-none dark:prose-invert prose-headings:font-display prose-headings:tracking-tight prose-a:text-accent-ink">
         <p>
           {SITE_NAME} publishes researched, source-cited answers to practical
           questions that foreigners ask about living in, working in, or visiting

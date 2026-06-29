@@ -5,6 +5,7 @@ import "./globals.css";
 import CategoriesMenu from "@/components/CategoriesMenu";
 import ClusterIcon from "@/components/ClusterIcon";
 import LineIcon from "@/components/LineIcon";
+import ThemeToggle from "@/components/ThemeToggle";
 import { getCategoryNav } from "@/lib/posts";
 import { groupByMenu } from "@/lib/presentation";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
@@ -22,6 +23,9 @@ const inter = Inter({
 });
 
 const INSTAGRAM = "https://instagram.com/kor_punch_boy";
+
+// FOUC 방지 — 페인트 전에 저장된 테마(또는 시스템)를 읽어 .dark 를 즉시 적용. (ThemeToggle 마운트보다 먼저)
+const THEME_INIT = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||((t==null||t==='system')&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -46,7 +50,15 @@ function SiteHeader() {
                 alt={SITE_NAME}
                 width={89}
                 height={32}
-                className="h-8 w-auto"
+                className="h-8 w-auto dark:hidden"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/daebak-logo-horizontal-dark.svg"
+                alt={SITE_NAME}
+                width={89}
+                height={32}
+                className="hidden h-8 w-auto dark:block"
               />
             </Link>
           </div>
@@ -75,6 +87,8 @@ function SiteHeader() {
               />
             </div>
           </form>
+
+          <ThemeToggle />
 
           <Link
             href="/search"
@@ -189,7 +203,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${spaceGrotesk.variable} ${inter.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+      </head>
       <body className="flex min-h-screen flex-col">
         <SiteHeader />
         <main className="flex-1">{children}</main>

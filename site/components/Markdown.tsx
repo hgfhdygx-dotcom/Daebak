@@ -78,7 +78,7 @@ const components = {
 export default function Markdown({ children }: { children: string }) {
   return (
     <div
-      className="prose prose-marker prose-neutral mt-2 max-w-none text-[1.02rem]
+      className="prose prose-marker prose-neutral dark:prose-invert mt-2 max-w-none text-[1.02rem]
         prose-headings:font-display prose-headings:tracking-tight prose-headings:mt-10 prose-headings:mb-3
         prose-h2:text-[1.6rem] prose-h3:text-xl
         prose-p:text-ink prose-p:leading-[1.75]

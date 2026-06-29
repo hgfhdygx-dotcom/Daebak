@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* 다크모드 = .dark 클래스 전략(system/수동 토글 공용). dark: 유틸리티가 .dark 기준으로 동작. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ─────────────────────────────────────────────────────────────
    Daebak 디자인 시스템 (전역 고정) — 밝고 깨끗한 정보 플랫폼.
    전체는 거의 흰색(따뜻한 아이보리), 포인트 코랄은 버튼·링크·CTA·소량 뱃지에만.
@@ -34,16 +37,50 @@
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* 블루 톤 카드 그림자(전역 단일 소스). @utility = hover/focus 변형 지원. */
+/* 카드 그림자(전역 단일 소스) — 변수로 빼서 다크에서 블루글로우 대신 깊은 그림자로 교체. */
 @utility shadow-card {
-  box-shadow: 0 14px 40px rgba(30, 143, 255, 0.10);
+  box-shadow: var(--shadow-card, 0 14px 40px rgba(30, 143, 255, 0.10));
 }
 @utility shadow-card-hover {
-  box-shadow: 0 18px 48px rgba(30, 143, 255, 0.16);
+  box-shadow: var(--shadow-card-hover, 0 18px 48px rgba(30, 143, 255, 0.16));
 }
 
 :root {
   color-scheme: light;
+  --shadow-card: 0 14px 40px rgba(30, 143, 255, 0.10);
+  --shadow-card-hover: 0 18px 48px rgba(30, 143, 255, 0.16);
+}
+
+/* ── 다크모드 토큰: 부드러운 navy/slate(순흑 아님). 모든 색은 토큰만 → 전 페이지 자동 적응. ── */
+.dark {
+  color-scheme: dark;
+  --color-bg: #0e1726;          /* 페이지: 깊은 네이비(검정 아님) */
+  --color-surface: #16202f;     /* 카드: 살짝 밝은 슬레이트 */
+  --color-section: #132030;     /* 섹션/hero 밴드 */
+  --color-th: #1b2738;          /* 표 헤더 */
+  --color-ink: #e7edf6;         /* 본문: 부드러운 화이트 */
+  --color-ink-muted: #a4b4c6;   /* meta·summary */
+  --color-line: #26354b;        /* 보더(은은) */
+  --color-accent: #3d9bff;      /* 메인 블루(다크에서 살짝 밝게) */
+  --color-accent-hover: #5cb0ff;
+  --color-accent-ink: #82c2ff;  /* 다크 배경용 밝은 블루 텍스트 */
+  --color-accent-soft: #173049; /* pale-blue 대체(아이콘 버블·hover) */
+  --color-link: #82c2ff;
+  --color-trust: #45a3ff;
+  --color-ink-soft: #748699;    /* 보조 텍스트(muted-2) */
+  --color-brand: #ff5a47;       /* 로고 레드(다크에서 살짝 밝게) */
+  --color-brand-soft: #3a1f1c;
+  --color-badge: #173049;       /* 정보 칩 배경 */
+  --color-badge-ink: #9fcbff;   /* 정보 칩 글자 */
+  --color-source: #1b2a3f;      /* 출처 칩 배경 */
+  --color-source-ink: #aac6ea;  /* 출처 칩 글자 */
+  --shadow-card: 0 14px 40px rgba(0, 0, 0, 0.45);
+  --shadow-card-hover: 0 18px 48px rgba(0, 0, 0, 0.55);
+}
+
+/* 사진은 다크에서 살짝 톤다운(눈부심 완화). 로고/아이콘 제외 — 명시 클래스(.photo-toned)에만 적용. */
+.dark .photo-toned {
+  filter: brightness(0.9) contrast(1.02) saturate(0.96);
 }
 
 html {
