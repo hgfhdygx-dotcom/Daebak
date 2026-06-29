@@ -128,7 +128,6 @@ export default function AskDaebak({
       <textarea
         id="ask-q"
         required
-        minLength={10}
         maxLength={1000}
         rows={3}
         value={question}

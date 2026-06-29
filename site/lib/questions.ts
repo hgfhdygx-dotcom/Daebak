@@ -86,7 +86,7 @@ function hashIp(ip: string): string {
 export function validateSubmission(input: { question?: string; website?: string }): { ok: boolean; reason?: string } {
   if ((input.website || "").trim()) return { ok: false, reason: "spam" }; // honeypot filled = bot
   const q = (input.question || "").trim();
-  if (q.length < 10) return { ok: false, reason: "too_short" };
+  if (q.length < 2) return { ok: false, reason: "too_short" }; // 빈/한글자만 차단, 그 외엔 통과
   if (q.length > 1000) return { ok: false, reason: "too_long" };
   if ((q.match(/https?:\/\//gi) || []).length > 2) return { ok: false, reason: "too_many_links" };
   return { ok: true };

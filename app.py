@@ -194,6 +194,9 @@ def render_secondary_nav():
 # ══════════════════════════════════════════════════════════════════════════
 def render_plan():
     st.subheader("① 기획·분류 — 질문 입력 → AI 분류 → 저장")
+    if ss.get("q_draft_flash"):
+        st.success(f"질문 인박스에서 만든 초안: **{ss.pop('q_draft_flash')}** — 아래 표에서 "
+                   "카테고리/세부 카테고리를 지정한 뒤 [생성·발행]으로 진행하세요.")
     ws = library.workflow_state()
     next_box(f"다음 액션: {ws['next']}")
 
@@ -841,6 +844,17 @@ def render_images():
 _Q_STATUSES = ["new", "reviewing", "answered", "draft_created", "published", "rejected", "spam"]
 _Q_CATS = ["all", "K-Beauty", "Shopping Apps & Stores", "Korean Brands & Products",
            "Travel Essentials", "Local Shopping Places", "Korean Snacks & Food"]
+_Q_STATUS_KO = {"new": "신규", "reviewing": "검토중", "answered": "답변완료",
+                "draft_created": "초안생성", "published": "발행됨", "rejected": "거절", "spam": "스팸"}
+_Q_PRIORITY_KO = {"low": "낮음", "normal": "보통", "high": "높음"}
+
+
+def _ko_status(s):
+    return _Q_STATUS_KO.get(s, s)
+
+
+def _ko_priority(p):
+    return _Q_PRIORITY_KO.get(p, p)
 
 
 def _render_question_detail(q: dict):
@@ -848,52 +862,53 @@ def _render_question_detail(q: dict):
     st.markdown(f"**{q.get('display_id') or ''}**")
     st.markdown(f"### {q.get('question', '')}")
     m = st.columns(3)
-    m[0].caption(f"status **{q.get('status')}** · priority {q.get('priority')}")
-    m[1].caption(f"category {q.get('category_guess') or '—'} · intent {q.get('intent_guess') or '—'}")
+    m[0].caption(f"상태 **{_ko_status(q.get('status'))}** · 우선순위 {_ko_priority(q.get('priority'))}")
+    m[1].caption(f"카테고리 {q.get('category_guess') or '—'} · 의도 {q.get('intent_guess') or '—'}")
     m[2].caption(f"{(q.get('created_at') or '')[:16]} · {q.get('source_component') or ''}")
     if q.get("email"):
-        st.caption(f"✉️ {q.get('email')}  ·  notify={q.get('notify_on_answer')}  ·  notif={q.get('notification_status')}")
-    st.caption("public status URL (사용자가 받은 링크):")
+        st.caption(f"✉️ {q.get('email')}  ·  알림희망={q.get('notify_on_answer')}  ·  발송상태={q.get('notification_status')}")
+    st.caption("질문자에게 준 상태 페이지 링크:")
     st.code(questions.status_url(q.get("public_token", "")), language=None)
 
-    # notes / priority / status
+    # 메모 / 우선순위 / 상태
     a = st.columns([3, 1, 1])
-    notes = a[0].text_area("admin notes", value=q.get("admin_notes") or "", key=f"q_notes_{qid}", height=80)
-    pri = a[1].selectbox("priority", ["low", "normal", "high"],
+    notes = a[0].text_area("관리자 메모", value=q.get("admin_notes") or "", key=f"q_notes_{qid}", height=80)
+    pri = a[1].selectbox("우선순위", ["low", "normal", "high"], format_func=_ko_priority,
                          index=["low", "normal", "high"].index(q.get("priority", "normal")), key=f"q_pri_{qid}")
     cur_st = q.get("status", "new")
-    new_st = a[2].selectbox("status", _Q_STATUSES,
+    new_st = a[2].selectbox("상태", _Q_STATUSES, format_func=_ko_status,
                             index=_Q_STATUSES.index(cur_st) if cur_st in _Q_STATUSES else 0, key=f"q_st_{qid}")
-    if a[0].button("💾 저장 (notes · priority · status)", key=f"q_savemeta_{qid}"):
+    if a[0].button("💾 저장 (메모·우선순위·상태)", key=f"q_savemeta_{qid}"):
         questions.update_question(qid, {"admin_notes": notes, "priority": pri, "status": new_st})
         st.success("저장했어요. ✅")
         st.rerun()
 
     st.divider()
     b = st.columns(3)
-    # 1) 답변 draft 생성 → 콘텐츠 파이프라인(plan)
-    if b[0].button("📝 답변 draft 생성", key=f"q_draft_{qid}"):
+    # 1) 답변 초안 생성 → 콘텐츠 파이프라인(① 기획·분류)으로 바로 이동
+    if b[0].button("📝 답변 초안 생성", key=f"q_draft_{qid}"):
         pid = questions.question_to_plan(q)
         if pid:
             questions.update_question(qid, {"answer_draft_id": pid, "status": "draft_created"})
-            st.success(f"plan 행 생성: {pid} — '① 기획·분류'에서 생성/발행하세요.")
+            ss["q_draft_flash"] = pid
+            ss["view"] = "기획·분류"   # 초안이 들어간 화면으로 이동
             st.rerun()
         else:
-            st.error("draft 생성 실패")
+            st.error("초안 생성 실패")
     if q.get("answer_draft_id"):
-        b[0].caption(f"draft: `{q.get('answer_draft_id')}`")
-    # 2) 발행된 answer page 연결
-    pub = b[1].text_input("published URL", value=q.get("published_url") or "", key=f"q_pub_{qid}")
-    if b[1].button("🔗 연결 + published", key=f"q_linkpub_{qid}"):
+        b[0].caption(f"초안: `{q.get('answer_draft_id')}`")
+    # 2) 발행된 답변 페이지 연결
+    pub = b[1].text_input("발행된 답변 URL", value=q.get("published_url") or "", key=f"q_pub_{qid}")
+    if b[1].button("🔗 연결 + 발행됨 처리", key=f"q_linkpub_{qid}"):
         questions.update_question(qid, {"published_url": (pub or "").strip(), "status": "published"})
-        st.success("연결했어요 → status published ✅")
+        st.success("연결했어요 → 상태: 발행됨 ✅")
         st.rerun()
-    # 3) 질문자에게 답변 알림 — '발행 후'에만(published URL 연결 필수). 답장-to-질문자 자동구조 아님.
-    if b[2].button("📧 Send notification", key=f"q_email_{qid}"):
+    # 3) 질문자에게 답변 알림 — '발행 후'에만(URL 연결 필수)
+    if b[2].button("📧 질문자에게 알림 보내기", key=f"q_email_{qid}"):
         if not q.get("email"):
             st.warning("이메일 없는 질문이에요.")
         elif not (q.get("published_url") or "").strip():
-            st.warning("먼저 published URL 을 연결하세요(답변 페이지 없이 발송 금지).")
+            st.warning("먼저 발행된 답변 URL 을 연결하세요(답변 페이지 없이 발송 금지).")
         else:
             res = questions.send_answer_email(q)
             questions.update_question(qid, {"notification_status": res,
@@ -901,7 +916,7 @@ def _render_question_detail(q: dict):
             (st.success if res == "sent" else st.warning)(f"이메일 알림: {res}")
             st.rerun()
     if not questions.email_configured():
-        b[2].caption("Email provider not configured")
+        b[2].caption("이메일(Resend) 미설정")
 
     if st.button("✖ 닫기", key=f"q_close_{qid}"):
         ss.pop("q_sel", None)
@@ -936,13 +951,15 @@ def render_questions():
         return
 
     counts = questions.counts_by_status()
-    st.caption(f"전체 {counts.get('_total', 0)} · 🆕 new {counts.get('new', 0)} · reviewing {counts.get('reviewing', 0)} "
-               f"· draft {counts.get('draft_created', 0)} · published {counts.get('published', 0)} · spam {counts.get('spam', 0)}")
+    st.caption(f"전체 {counts.get('_total', 0)} · 🆕 신규 {counts.get('new', 0)} · 검토중 {counts.get('reviewing', 0)} "
+               f"· 초안 {counts.get('draft_created', 0)} · 발행 {counts.get('published', 0)} · 스팸 {counts.get('spam', 0)}")
 
     f = st.columns([2, 2, 3, 1])
-    status_f = f[0].selectbox("상태", ["all"] + _Q_STATUSES, key="q_status_f")
-    cat_f = f[1].selectbox("카테고리", _Q_CATS, key="q_cat_f")
-    search = f[2].text_input("검색(질문)", key="q_search_f")
+    status_f = f[0].selectbox("상태", ["all"] + _Q_STATUSES,
+                              format_func=lambda s: "전체" if s == "all" else _ko_status(s), key="q_status_f")
+    cat_f = f[1].selectbox("카테고리", _Q_CATS,
+                           format_func=lambda c: "전체" if c == "all" else c, key="q_cat_f")
+    search = f[2].text_input("검색 (질문·번호)", key="q_search_f")
     if f[3].button("🔄 새로고침", key="q_refresh"):
         st.cache_data.clear()
         st.rerun()
@@ -958,7 +975,7 @@ def render_questions():
                 f"{q.get('category_guess') or '—'} · {q.get('intent_guess') or '—'} · "
                 f"{q.get('source_component') or ''} · {(q.get('created_at') or '')[:10]}"
                 + ("  · ✉️" if q.get("email") else ""))
-            c[1].markdown(f"`{q.get('status')}`")
+            c[1].markdown(f"`{_ko_status(q.get('status'))}`")
             if c[2].button("열기", key=f"q_open_{q['id']}"):
                 ss["q_sel"] = q["id"]
                 st.rerun()
