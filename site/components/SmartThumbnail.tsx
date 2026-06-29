@@ -43,7 +43,9 @@ export default function SmartThumbnail({
   const r = pickImage(post);
   const resolvedAlt = alt || r.alt;
   const resolvedIcon = iconKind || r.iconKind;
-  const box = `relative overflow-hidden ${ASPECT[aspect] || ASPECT["16/9"]} ${className}`;
+  // w-full 필수: aspect + max-h 를 같이 쓰면 명시적 너비가 없을 때 박스가 비율 유지하려고 좁아져
+  // 오른쪽에 흰 여백이 생긴다. width:100% 를 고정하면 높이만 캡되고 너비는 꽉 찬다.
+  const box = `relative w-full overflow-hidden ${ASPECT[aspect] || ASPECT["16/9"]} ${className}`;
 
   // 승인된 Unsplash 사진 → HOTLINK(<img> 로 Unsplash CDN 직접 표시, 로컬 저장/프록시 없음 = 가이드라인 준수).
   // attribution 은 카드/호출부가 형제 overlay 로 표시(링크 중첩 방지).
