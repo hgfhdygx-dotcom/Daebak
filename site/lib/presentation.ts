@@ -40,10 +40,11 @@ export const PLACES: { label: string; q: string }[] = [
 
 // 메가메뉴 시각 그룹(열) — 콘텐츠가 아니라 '배치 순서'다. 탐색/여행 · 라이프스타일 · 쇼핑/상품 3그룹.
 // 미지정 슬러그(taxonomy 에 새 카테고리 추가 시)는 자동으로 마지막 그룹에 편입(범용·하드코딩 아님).
+// 피벗: 메뉴도 수익 축 먼저(K-Beauty/Shopping/Products) → 라이프스타일 → 여행 Essentials.
 export const MENU_GROUPS: { id: string; slugs: string[] }[] = [
-  { id: "explore", slugs: ["travel", "local-places", "korean-rules"] },
-  { id: "lifestyle", slugs: ["food", "k-beauty", "k-fashion"] },
-  { id: "shop", slugs: ["shopping", "products"] },
+  { id: "shop", slugs: ["k-beauty", "shopping", "products"] },
+  { id: "lifestyle", slugs: ["food", "k-fashion"] },
+  { id: "explore", slugs: ["local-places", "travel", "korean-rules"] },
 ];
 
 // 카테고리 배열을 MENU_GROUPS 순서대로 3그룹으로 묶음. 미지정은 마지막 그룹. 비는 그룹은 제외.
