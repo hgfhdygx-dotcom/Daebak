@@ -52,10 +52,10 @@ export default function ThemeToggle() {
       onClick={cycle}
       aria-label={`Theme: ${label}. Click to switch.`}
       title={`Theme: ${label} — click to switch`}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-ink-muted transition-colors hover:text-accent-ink"
+      className="flex h-9 items-center gap-1.5 rounded-full border border-line px-3 text-ink-muted transition-colors hover:border-accent/50 hover:text-accent-ink"
     >
       {cur === "light" ? <SunIcon /> : cur === "dark" ? <MoonIcon /> : <MonitorIcon />}
-      <span className="sr-only">{label} theme</span>
+      <span className="text-xs font-medium">{label}</span>
     </button>
   );
 }

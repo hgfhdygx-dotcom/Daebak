@@ -46,3 +46,36 @@ export function buildFaqLd(post: Post) {
     })),
   };
 }
+
+// Entity(브랜드/스토어/앱/제품) 페이지용 — Product. offers 는 monetization.buyLinks 있을 때만.
+export function buildProductLd(post: Post, url: string) {
+  const offers = (post.monetization?.buyLinks ?? []).map((l) => ({
+    "@type": "Offer",
+    url: l.url,
+    ...(l.store ? { seller: { "@type": "Organization", name: l.store } } : {}),
+  }));
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: post.title,
+    description: post.summary || post.citationPack?.answer || "",
+    ...(offers.length ? { offers } : {}),
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+  };
+}
+
+// Buying-guide 페이지용 — ItemList(추천 목록). productGroups/criteria 에서 항목 추출.
+export function buildItemListLd(post: Post, url: string) {
+  const list = post.productGroups || post.criteria || [];
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: post.title,
+    url,
+    itemListElement: list.map((name, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name,
+    })),
+  };
+}

@@ -68,7 +68,7 @@ export default function Sidebar({
       <div className="overflow-hidden rounded-2xl border border-line shadow-card">
         <div className="relative">
           <SmartThumbnail post={visual} visual={approved} aspect="4/3" level="cluster" iconKind={visualIcon} />
-          {approved ? <Attribution visual={approved} className="absolute bottom-1.5 right-1.5 z-10" /> : null}
+          {approved ? <Attribution visual={approved} className="absolute inset-x-0 bottom-0 z-10" /> : null}
         </div>
         {cluster ? (
           <p className="px-4 py-2.5 text-[0.72rem] font-medium text-ink-muted">

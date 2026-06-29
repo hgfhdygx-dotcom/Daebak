@@ -29,7 +29,7 @@ export default function CategoryCard({ cat }: { cat: HomeCategory }) {
             alt={`${cat.title} guides`}
           />
         </Link>
-        {approved ? <Attribution visual={approved} className="absolute bottom-1.5 right-1.5 z-10" /> : null}
+        {approved ? <Attribution visual={approved} className="absolute inset-x-0 bottom-0 z-10" /> : null}
       </div>
       <div className="flex flex-1 flex-col p-5">
         <Link href={cat.href} className="block">

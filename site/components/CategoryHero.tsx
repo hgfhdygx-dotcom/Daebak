@@ -69,7 +69,7 @@ export default function CategoryHero({
             iconKind={icon}
             tint={tint}
           />
-          {approved ? <Attribution visual={approved} className="absolute bottom-1.5 right-1.5 z-10" /> : null}
+          {approved ? <Attribution visual={approved} className="absolute inset-x-0 bottom-0 z-10" /> : null}
         </div>
       </div>
     </section>

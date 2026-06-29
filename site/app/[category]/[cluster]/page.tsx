@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import AnswerCard from "@/components/AnswerCard";
 import Breadcrumb from "@/components/Breadcrumb";
 import SmartThumbnail from "@/components/SmartThumbnail";
+import Attribution from "@/components/Attribution";
 import JsonLd from "@/components/JsonLd";
+import { getApprovedVisual } from "@/lib/visuals";
 import { distinctCardIcons } from "@/lib/cardIntent";
 import {
   categoryTone,
@@ -60,6 +62,7 @@ export default async function ClusterPage({
   const cl = getCluster(cluster);
   if (!cat || !cl || (cl.bigCategory !== cat.id && cl.bigCategory !== cat.slug)) notFound();
 
+  const clusterVisual = getApprovedVisual("cluster", cl.slug);
   const pillar = getPillarPost(cl.slug);
   const published = getPostsByCluster(cl.slug).filter((p) => p.slug !== pillar?.slug);
   const publishedSlugs = new Set(
@@ -104,40 +107,34 @@ export default async function ClusterPage({
             </p>
           ) : null}
         </div>
-        {/* 우측 compact 클러스터 비주얼(사진 or 흰 패널 폴백) — 모바일 숨김 */}
-        <div className="hidden shrink-0 sm:block">
+        {/* 우측 compact 클러스터 비주얼(승인 Unsplash 사진 hotlink or 흰 패널 폴백) — 모바일 숨김 */}
+        <div className="relative hidden w-40 shrink-0 overflow-hidden rounded-2xl border border-line shadow-card sm:block lg:w-48">
           <SmartThumbnail
             post={{
               title: cl.title,
               cluster: cl.title,
               bigCategorySlug: cat.slug,
               clusterSlug: cl.slug,
-              imageKey: cl.visualKey,
             } as Post}
+            visual={clusterVisual}
             aspect="4/3"
             level="cluster"
             iconKind={cl.icon}
             tint={categoryTone(cl.bigCategory)}
-            className="w-40 rounded-2xl border border-line shadow-card lg:w-48"
           />
+          {clusterVisual ? (
+            <Attribution visual={clusterVisual} className="absolute inset-x-0 bottom-0 z-10" />
+          ) : null}
         </div>
       </div>
 
-      {/* 대표 글(Pillar) — 카드가 스스로 인텐트 라벨(MAIN GUIDE 등) 표시 */}
-      {pillar ? (
+      {/* 답변 그리드 — 대표글(pillar)이 첫 카드(MAIN GUIDE 라벨은 카드가 스스로 표시).
+          큰 featured 카드(광고식 CTA)는 제거 — 일반 카드 그리드로 통일. */}
+      {pillar || published.length ? (
         <section className="mt-7">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink">
-            Start here
-          </p>
-          <AnswerCard post={pillar} variant="featured" icon={articleIcons[0]} />
-        </section>
-      ) : null}
-
-      {/* 발행된 supporting 답변 */}
-      {published.length ? (
-        <section className="mt-8">
           <h2 className="font-display text-lg font-bold tracking-tight">Traveler questions</h2>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            {pillar ? <AnswerCard post={pillar} icon={articleIcons[0]} /> : null}
             {published.map((p, i) => (
               <AnswerCard key={p.slug} post={p} icon={pubIconAt(i)} />
             ))}

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Article from "@/components/Article";
 import JsonLd from "@/components/JsonLd";
 import { getAllSlugs, getPostBySlug, getRelatedPosts } from "@/lib/posts";
-import { buildArticleLd, buildBreadcrumbLd, buildFaqLd } from "@/lib/schema";
+import { buildArticleLd, buildBreadcrumbLd, buildFaqLd, buildProductLd, buildItemListLd } from "@/lib/schema";
 import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-static";
@@ -72,6 +72,8 @@ export default async function AnswerPage({
       {post.faq && post.faq.length > 0 ? (
         <JsonLd data={buildFaqLd(post)} />
       ) : null}
+      {post.pageType === "entity" ? <JsonLd data={buildProductLd(post, url)} /> : null}
+      {post.pageType === "buying-guide" ? <JsonLd data={buildItemListLd(post, url)} /> : null}
       <Article post={post} related={related} crumbs={crumbs} />
     </>
   );

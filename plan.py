@@ -38,7 +38,8 @@ ALLOWED = {
 }
 
 QUESTION_TYPES = ("pillar", "supporting", "faq")
-PAGE_TYPES = ("route", "comparison", "price", "planning", "practical", "list", "safety", "visa")
+PAGE_TYPES = ("route", "comparison", "price", "planning", "practical", "list", "safety", "visa",
+              "entity", "buying-guide")
 DEDUPE_ACTIONS = ("", "faq", "supporting_link", "supporting_page", "separate")
 
 _EDITABLE = {

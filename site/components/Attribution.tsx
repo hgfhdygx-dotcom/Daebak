@@ -14,11 +14,11 @@ export default function Attribution({
 }) {
   const base =
     tone === "overlay"
-      ? "pointer-events-auto inline-flex max-w-[92%] items-center gap-1 truncate rounded-md bg-black/55 px-1.5 py-0.5 text-[0.62rem] font-medium leading-none text-white/90 backdrop-blur-sm"
+      ? "pointer-events-none flex w-full items-center justify-end gap-1 truncate bg-gradient-to-t from-black/70 via-black/25 to-transparent px-2.5 pb-1 pt-5 text-[0.6rem] font-medium leading-none text-white/85"
       : "inline-flex items-center gap-1 text-[0.7rem] text-ink-soft";
   const link =
     tone === "overlay"
-      ? "underline decoration-white/40 underline-offset-2 hover:decoration-white"
+      ? "pointer-events-auto underline decoration-white/40 underline-offset-2 hover:decoration-white"
       : "underline decoration-line underline-offset-2 hover:text-accent-ink";
   return (
     <span className={`${base} ${className}`}>

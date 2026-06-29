@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 import CategoryHero from "@/components/CategoryHero";
 import ClusterCard from "@/components/ClusterCard";
-import FeaturedAnswer from "@/components/FeaturedAnswer";
 import QuickTopicChips from "@/components/QuickTopicChips";
 import JsonLd from "@/components/JsonLd";
 import {
@@ -13,7 +12,6 @@ import {
   getActiveCategorySlugs,
   getCategory,
   getClustersOf,
-  getFeaturedGuide,
   getNavTopics,
   resolveTopicHref,
   categoryTone,
@@ -61,7 +59,6 @@ export default async function CategoryPage({
   const orderedClusters = [...liveClusters, ...soonClusters]; // 라이브 먼저, 한 그리드로 균형
   const stats = categoryStats(cat.slug);
   const topics = getNavTopics(cat).map((t) => ({ label: t.label, href: resolveTopicHref(t) }));
-  const featured = getFeaturedGuide(cat.slug);
   const tint = categoryTone(cat.slug);
   const icon = cat.icon || CATEGORY_ICON_FALLBACK[cat.slug] || "products";
 
@@ -87,13 +84,6 @@ export default async function CategoryPage({
       />
 
       <QuickTopicChips topics={topics} />
-
-      {/* 대표 답변 — compact featured guide */}
-      {featured ? (
-        <section className="mt-6">
-          <FeaturedAnswer post={featured} />
-        </section>
-      ) : null}
 
       {/* 클러스터 그리드 — 모든 토픽(라이브 먼저) 2~3열 균형. 라이브 1개여도 그리드가 차서 외톨이 없음 */}
       {orderedClusters.length ? (

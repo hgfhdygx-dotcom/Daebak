@@ -105,6 +105,10 @@ SITE_URL = ""                             # 배포된 사이트 주소(예: http
 AUTHOR_NAME = "Editorial Team"            # E-E-A-T(작성자) — 웹앱에서 본인 이름으로
 AUTHOR_BIO = "We research practical questions for foreigners living in or visiting Korea, citing primary sources."
 
+# 💰 수익화(피벗) — Entity/Buying-Guide 페이지의 제휴 고지 기본 문구. 페이지에 monetization 있을 때만 표시.
+# 광고처럼 과하게 X, 신뢰 우선. 웹앱에서 바꿀 수 있음(settings.json).
+AFFILIATE_DISCLOSURE_TEXT = "Some links are affiliate links — if you buy through them, Daebak may earn a small commission at no extra cost to you. It never changes our picks, facts, or sources."
+
 # 🖼 이미지(Unsplash) — bigCategory/cluster 대표 비주얼. hotlink(로컬 저장 X) + photographer attribution + Apply 시 download trigger.
 # ACCESS_KEY는 서버(admin) 전용. 키는 .env(.local) 또는 웹앱(Image Manager)에서 저장 → settings.json.
 UNSPLASH_ACCESS_KEY = ""
@@ -143,7 +147,7 @@ def _load_user_settings():
               "MAX_SUBQS", "ECONOMY_MODE", "DAILY_LIMIT", "MONTHLY_LIMIT", "MAX_COST_PER_RUN_KRW",
               "SITE_URL", "SITE_DIR", "SITE_CONTENT_DIR", "AUTHOR_NAME", "AUTHOR_BIO",
               "INDEXNOW_DRY_RUN", "UNSPLASH_ACCESS_KEY", "UNSPLASH_SECRET_KEY",
-              "UNSPLASH_APP_NAME", "UNSPLASH_API_BASE"):
+              "UNSPLASH_APP_NAME", "UNSPLASH_API_BASE", "AFFILIATE_DISCLOSURE_TEXT"):
         if k in s and s[k] is not None:
             g[k] = s[k]
 

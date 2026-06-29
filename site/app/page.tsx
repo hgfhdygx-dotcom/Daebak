@@ -16,22 +16,22 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 const INSTAGRAM = "https://instagram.com/kor_punch_boy";
 
 const INTRO =
-  "Clear answers for your first Korea trip — airport routes, subway tips, prices, local guides, " +
-  "and trusted sources, from a local Korean perspective.";
+  "Know what to buy, where to buy it, and how to use Korean products, shops, apps, and travel " +
+  "essentials — clear, sourced answers for foreigners in Korea.";
 
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "Daebak — Korea travel, made simple",
+  title: "Daebak — what to buy & how to get around Korea",
   description: INTRO,
-  openGraph: { title: "Daebak — Korea travel, made simple", description: INTRO, type: "website" },
+  openGraph: { title: "Daebak — what to buy & how to get around Korea", description: INTRO, type: "website" },
 };
 
 const websiteLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: SITE_NAME,
-  alternateName: "Daebak — Korea travel guide",
+  alternateName: "Daebak — Korea shopping & travel essentials guide",
   url: SITE_URL,
   inLanguage: "en",
   description: INTRO,
@@ -50,7 +50,13 @@ const websiteLd = {
 };
 
 // 검색 예시 칩(시드) + 신뢰 한 줄(예시칩과 한 행에 결합).
-const EXAMPLES = ["Incheon Airport to Seoul", "Seoul subway & T-money", "Where to stay in Seoul"];
+const EXAMPLES = [
+  "Olive Young must-buys",
+  "Best Korean sunscreen",
+  "Can foreigners use Coupang?",
+  "WOWPASS vs T-money",
+  "Myeongdong shopping",
+];
 
 // 히어로 우측 여행 비주얼 — admin Image Manager 의 'hero:home' 승인 사진(있으면 hotlink, 없으면 흰 패널 폴백).
 const HERO_VISUAL = {
@@ -79,17 +85,17 @@ export default function Home() {
           {/* LEFT */}
           <div className="max-w-xl">
             <p className="text-[0.78rem] font-semibold uppercase tracking-[0.18em] text-accent-ink">
-              Plan your Korea trip
+              For foreigners in Korea
             </p>
             <h1 className="mt-2.5 font-display text-[clamp(2.4rem,5vw,3.6rem)] font-bold leading-[1.03] tracking-tight text-ink">
               Korea, made simple.
             </h1>
             <p className="mt-4 text-base leading-relaxed text-ink-muted sm:text-lg">
-              Clear, sourced answers for your first trip — airport routes, subway, prices, and local
-              guides, from a Korean local.
+              Know what to buy, where to buy it, and how to use Korean products, shops, apps, and
+              travel essentials — sourced answers, from a Korean local.
             </p>
 
-            <SearchBar className="mt-6" placeholder="Ask about Korea travel, food, or local places…" />
+            <SearchBar className="mt-6" placeholder="What do you want to buy or understand in Korea?" />
 
             {/* 예시 칩 + 신뢰 한 줄(결합) */}
             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -111,13 +117,9 @@ export default function Home() {
 
           {/* RIGHT — 큰 비주얼(좌우 빈 공간 제거). 모바일은 숨겨 검색 우선. */}
           <div className="group relative hidden lg:block">
-            <div className="overflow-hidden rounded-[28px] border border-line shadow-card-hover">
+            <div className="relative overflow-hidden rounded-[28px] border border-line shadow-card-hover">
               <SmartThumbnail post={HERO_VISUAL} visual={heroVisual} aspect="16/9" level="bigCategory" priority className="max-h-[340px]" />
-            </div>
-            {heroVisual ? <Attribution visual={heroVisual} className="absolute right-3 top-3 z-10" /> : null}
-            <div className="pointer-events-none absolute inset-x-4 bottom-4 flex items-center gap-2 rounded-xl border border-line/60 bg-surface/85 px-3.5 py-2 text-[0.75rem] font-medium text-ink-muted backdrop-blur">
-              <LineIcon name="compass" className="h-4 w-4 text-accent-ink" />
-              Airport → Seoul → neighborhoods → stay
+              {heroVisual ? <Attribution visual={heroVisual} className="absolute inset-x-0 bottom-0 z-10" /> : null}
             </div>
           </div>
         </div>
@@ -129,7 +131,7 @@ export default function Home() {
           <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
             Browse Korea by category
           </h2>
-          <p className="mt-1.5 text-sm text-ink-muted">Pick a topic — guides, prices, and routes inside.</p>
+          <p className="mt-1.5 text-sm text-ink-muted">Pick a topic — what to buy, where to go, and how to use it.</p>
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {homeCats.map((c) => (
               <CategoryCard key={c.slug} cat={c} />

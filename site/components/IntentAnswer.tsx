@@ -5,6 +5,7 @@ import TimeFirstTemplate from "@/components/TimeFirstTemplate";
 import StepsTemplate from "@/components/StepsTemplate";
 import RecommendationTemplate from "@/components/RecommendationTemplate";
 import BuyingTemplate from "@/components/BuyingTemplate";
+import EntityTemplate from "@/components/EntityTemplate";
 import { cardIntent } from "@/lib/cardIntent";
 import type { Post } from "@/lib/posts";
 
@@ -16,6 +17,10 @@ export default function IntentAnswer({ post }: { post: Post }) {
   const hasWorthData = Boolean(
     post.verdict || (post.goodFor && post.goodFor.length) || (post.notFor && post.notFor.length),
   );
+
+  // 명시 pageType(피벗) 우선 — entity / buying-guide.
+  if (post.pageType === "entity") return <EntityTemplate post={post} />;
+  if (post.pageType === "buying-guide") return <BuyingTemplate post={post} />;
 
   if (intent === "WORTH IT" && hasWorthData) return <WorthItAnswerTemplate post={post} />;
   if (intent === "CHEAPEST" || intent === "PRICE" || /COST$/.test(intent))

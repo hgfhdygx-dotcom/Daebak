@@ -6,6 +6,8 @@ import IntentAnswer from "@/components/IntentAnswer";
 import RouteStrip from "@/components/RouteStrip";
 import ComparisonBlock from "@/components/ComparisonBlock";
 import FaqSection from "@/components/FaqSection";
+import WhereToBuy from "@/components/WhereToBuy";
+import AffiliateDisclosure from "@/components/AffiliateDisclosure";
 import NextQuestions from "@/components/NextQuestions";
 import RelatedAnswers from "@/components/RelatedAnswers";
 import Sidebar, { AskCta } from "@/components/Sidebar";
@@ -71,6 +73,10 @@ export default function Article({
           {post.faq && post.faq.length > 0 ? (
             <FaqSection items={post.faq} />
           ) : null}
+
+          {/* 수익화 슬롯(피벗) — monetization 있을 때만. 'Where to buy' + 조용한 제휴 고지 */}
+          <WhereToBuy post={post} />
+          <AffiliateDisclosure post={post} />
 
           {/* 출처 — 도메인 + 한 줄 설명(공식/제3자 구분) */}
           {post.sources && post.sources.length > 0 ? (

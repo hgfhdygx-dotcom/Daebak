@@ -67,7 +67,9 @@ def _llm_meta(question: str, synth: dict, client, cfg) -> dict:
 
 _FM_EXTRA_KEYS = ("bigCategory", "bigCategorySlug", "cluster", "clusterSlug", "pillarSlug",
                   "pillarQuestion", "questionType", "pageType", "intent", "needsFreshSource",
-                  "relatedGuides", "geoScore", "answerSummary", "priority", "featured", "tags")
+                  "relatedGuides", "geoScore", "answerSummary", "priority", "featured", "tags",
+                  # 피벗: 수익화/Entity 구조 필드(operator 가 extra 로 전달 — 있을 때만 frontmatter 에)
+                  "monetization", "priceRange", "quickFacts", "foreignerNotes", "commonMistakes")
 
 
 def build_seo(question: str, synth: dict, client, cfg=None, extra: dict | None = None) -> dict:
@@ -118,7 +120,8 @@ def build_seo(question: str, synth: dict, client, cfg=None, extra: dict | None =
             frontmatter[k] = extra[k]
     # 의도별 상세 구조 필드(synth 가 생성했을 때만 — worth_it + 가격/단계/추천/구매)
     for k in ("verdict", "goodFor", "notFor", "alternatives",
-              "priceFactors", "steps", "topPick", "criteria", "buyLocations", "productGroups"):
+              "priceFactors", "steps", "topPick", "criteria", "buyLocations", "productGroups",
+              "quickFacts", "priceRange", "foreignerNotes", "commonMistakes"):
         if synth.get(k):
             frontmatter[k] = synth[k]
     return {

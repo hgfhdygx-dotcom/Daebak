@@ -8,6 +8,17 @@ export type Source = { url: string; domain?: string; note?: string };
 export type Faq = { q: string; a: string };
 export type CitationPack = { answer?: string; keyFacts?: string[]; quotable?: string };
 export type GlanceItem = { label: string; value: string };
+// 수익화 슬롯(pivot) — 있을 때만 'Where to buy' + 출처표기 노출. 신뢰 우선, 스팸 금지.
+export type LinkRef = { label: string; url: string; store?: string };
+export type Monetization = {
+  type?: "affiliate" | "sponsored" | "local_listing" | "none";
+  disclosure?: string;       // 제휴 고지 문구(없으면 기본 문구)
+  buyLinks?: LinkRef[];      // 구매처(제휴 가능)
+  officialLinks?: LinkRef[]; // 공식 사이트
+  ctaLabel?: string;
+  ctaUrl?: string;
+  sponsoredLabel?: string;   // 스폰서일 때만
+};
 
 export type PostMeta = {
   title: string;
@@ -58,6 +69,12 @@ export type PostMeta = {
   place?: string;            // 장소감 (예: "Myeongdong")
   travelMoment?: string;     // 짧은 여행 모먼트 라벨
   imageKey?: string;         // 이미지 레지스트리 키(없으면 문맥으로 자동 선택; URL 직접 저장 금지)
+  // Entity / Buying-Guide 구조 필드(pivot foundation — 없으면 숨김, fallback 안 깨짐)
+  quickFacts?: GlanceItem[]; // Entity: 핵심 사실 표(What/Where/Price 등)
+  priceRange?: string;       // 가격대 (예: "₩10,000–30,000")
+  foreignerNotes?: string[]; // 외국인 친화 주의/팁
+  commonMistakes?: string[]; // 흔한 실수
+  monetization?: Monetization; // 수익화 슬롯(있을 때만 노출)
 };
 
 export type Post = PostMeta & { body: string };
@@ -97,6 +114,7 @@ export type BigCategory = {
   visualKey?: string; // 이미지 레지스트리 키(bigCategory 카드/허브 비주얼). 없으면 폴백.
   clusters: string[];
   status?: string;
+  order?: number; // 홈/내비 노출 순서(작을수록 먼저). 없으면 뒤로. 피벗: 수익 축 카테고리를 앞으로.
 };
 export type Taxonomy = {
   bigCategories: BigCategory[];
@@ -288,7 +306,7 @@ export type MenuCategory = {
 };
 // 메가메뉴/모바일 accordion 데이터(모든 bigCategory). 링크는 전부 resolver 통과.
 export function getCategoryNav(): MenuCategory[] {
-  return getTaxonomy().bigCategories.map((cat) => ({
+  return orderedBigCategories().map((cat) => ({
     slug: cat.slug,
     title: cat.title,
     icon: cat.icon || CATEGORY_ICON_FALLBACK[cat.slug] || "products",
@@ -358,8 +376,16 @@ export type HomeCategory = {
   pills: { label: string; href: string }[];
 };
 // 홈 "Browse by category" 단일 소스(taxonomy + presentation 파생). page.tsx CATEGORIES const 대체.
+// 피벗: order 필드로 정렬(수익 축 먼저). order 없으면 뒤로. 같은 order면 원래 순서 유지.
+export function orderedBigCategories(): BigCategory[] {
+  return getTaxonomy()
+    .bigCategories.map((cat, i) => ({ cat, i }))
+    .sort((a, b) => (a.cat.order ?? 99) - (b.cat.order ?? 99) || a.i - b.i)
+    .map((x) => x.cat);
+}
+
 export function getHomeCategories(): HomeCategory[] {
-  return getTaxonomy().bigCategories.map((cat) => ({
+  return orderedBigCategories().map((cat) => ({
     slug: cat.slug,
     title: cat.title,
     blurb: cat.blurb || cat.description || "",

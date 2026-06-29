@@ -45,9 +45,14 @@ PAGE_TYPE_SKELETONS = {
     "safety": ["Key facts", "Is it safe", "What to watch out for", "Practical tips"],
     "visa": ["Key facts", "Who needs it", "How to apply", "Cost and processing time",
              "Confirm on the official source"],
+    # 피벗: 쇼핑/제품 페이지 타입
+    "entity": ["Overview", "Quick facts", "Best for", "Price range", "Where to buy or visit",
+               "Foreigner-friendly notes", "Common mistakes", "Alternatives"],
+    "buying-guide": ["Top picks at a glance", "How to choose", "Best for each person",
+                     "Where to buy", "Price range", "What to watch out for"],
 }
-_TABLE_PAGETYPES = {"route", "comparison"}        # 옵션 비교표 필수
-_KEYFACTS_PAGETYPES = {"route", "price", "practical", "list", "safety", "visa"}  # Key facts 속성표
+_TABLE_PAGETYPES = {"route", "comparison", "buying-guide"}   # 옵션/추천 비교표 필수
+_KEYFACTS_PAGETYPES = {"route", "price", "practical", "list", "safety", "visa", "entity"}  # Key facts 속성표
 
 
 def _skeleton_clause(page_type: str) -> str:
