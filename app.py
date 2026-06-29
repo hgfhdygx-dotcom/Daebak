@@ -29,6 +29,7 @@ import storage
 import taxonomy
 import usage
 import visuals
+import questions
 
 st.set_page_config(page_title="Daebak 운영 콘솔", page_icon="🛠️", layout="wide")
 ss = st.session_state
@@ -166,8 +167,13 @@ def render_progress():
     st.caption(f"현재 단계: **{current}** · 다음 작업: {ws['next']}")
 
 
+@st.cache_data(ttl=30, show_spinner=False)
+def _q_new_count() -> int:
+    return questions.new_count()
+
+
 def render_secondary_nav():
-    c1, c2, c3, _ = st.columns([1, 1, 1, 5])
+    c1, c2, c3, c4, _ = st.columns([1, 1, 1, 1, 4])
     if c1.button("📚 라이브러리", key="nav_lib", use_container_width=True):
         ss["view"] = "라이브러리"
         st.rerun()
@@ -176,6 +182,10 @@ def render_secondary_nav():
         st.rerun()
     if c3.button("🖼 이미지", key="nav_images", use_container_width=True):
         ss["view"] = "이미지"
+        st.rerun()
+    _qn = _q_new_count() if questions.is_configured() else 0
+    if c4.button(f"❓ 질문 ({_qn})" if _qn else "❓ 질문", key="nav_questions", use_container_width=True):
+        ss["view"] = "질문"
         st.rerun()
 
 
@@ -826,6 +836,142 @@ def render_images():
 
 
 # ══════════════════════════════════════════════════════════════════════════
+#  ❓ 질문 인박스 — 외국인 질문 수집 → 답변/발행 (Supabase)
+# ══════════════════════════════════════════════════════════════════════════
+_Q_STATUSES = ["new", "reviewing", "answered", "draft_created", "published", "rejected", "spam"]
+_Q_CATS = ["all", "K-Beauty", "Shopping Apps & Stores", "Korean Brands & Products",
+           "Travel Essentials", "Local Shopping Places", "Korean Snacks & Food"]
+
+
+def _render_question_detail(q: dict):
+    qid = q["id"]
+    st.markdown(f"### {q.get('question', '')}")
+    m = st.columns(3)
+    m[0].caption(f"status **{q.get('status')}** · priority {q.get('priority')}")
+    m[1].caption(f"category {q.get('category_guess') or '—'} · intent {q.get('intent_guess') or '—'}")
+    m[2].caption(f"{(q.get('created_at') or '')[:16]} · {q.get('source_component') or ''}")
+    if q.get("email"):
+        st.caption(f"✉️ {q.get('email')}  ·  notify={q.get('notify_on_answer')}  ·  notif={q.get('notification_status')}")
+    st.caption("public status URL (사용자가 받은 링크):")
+    st.code(questions.status_url(q.get("public_token", "")), language=None)
+
+    # notes / priority / status
+    a = st.columns([3, 1, 1])
+    notes = a[0].text_area("admin notes", value=q.get("admin_notes") or "", key=f"q_notes_{qid}", height=80)
+    pri = a[1].selectbox("priority", ["low", "normal", "high"],
+                         index=["low", "normal", "high"].index(q.get("priority", "normal")), key=f"q_pri_{qid}")
+    cur_st = q.get("status", "new")
+    new_st = a[2].selectbox("status", _Q_STATUSES,
+                            index=_Q_STATUSES.index(cur_st) if cur_st in _Q_STATUSES else 0, key=f"q_st_{qid}")
+    if a[0].button("💾 저장 (notes · priority · status)", key=f"q_savemeta_{qid}"):
+        questions.update_question(qid, {"admin_notes": notes, "priority": pri, "status": new_st})
+        st.success("저장했어요. ✅")
+        st.rerun()
+
+    st.divider()
+    b = st.columns(3)
+    # 1) 답변 draft 생성 → 콘텐츠 파이프라인(plan)
+    if b[0].button("📝 답변 draft 생성", key=f"q_draft_{qid}"):
+        pid = questions.question_to_plan(q)
+        if pid:
+            questions.update_question(qid, {"answer_draft_id": pid, "status": "draft_created"})
+            st.success(f"plan 행 생성: {pid} — '① 기획·분류'에서 생성/발행하세요.")
+            st.rerun()
+        else:
+            st.error("draft 생성 실패")
+    if q.get("answer_draft_id"):
+        b[0].caption(f"draft: `{q.get('answer_draft_id')}`")
+    # 2) 발행된 answer page 연결
+    pub = b[1].text_input("published URL", value=q.get("published_url") or "", key=f"q_pub_{qid}")
+    if b[1].button("🔗 연결 + published", key=f"q_linkpub_{qid}"):
+        questions.update_question(qid, {"published_url": (pub or "").strip(), "status": "published"})
+        st.success("연결했어요 → status published ✅")
+        st.rerun()
+    # 3) 이메일 알림
+    if b[2].button("📧 이메일 알림 발송", key=f"q_email_{qid}"):
+        if not q.get("email"):
+            st.warning("이메일 없는 질문이에요.")
+        elif not (q.get("published_url") or "").strip():
+            st.warning("먼저 published URL 을 연결하세요(답변 페이지 없이 발송 금지).")
+        else:
+            res = questions.send_answer_email(q)
+            questions.update_question(qid, {"notification_status": res,
+                                            "notified_at": storage.now_kst().isoformat(timespec="seconds")})
+            (st.success if res == "sent" else st.warning)(f"이메일 알림: {res}")
+            st.rerun()
+    if not questions.email_configured():
+        b[2].caption("Email provider not configured")
+
+    if st.button("✖ 닫기", key=f"q_close_{qid}"):
+        ss.pop("q_sel", None)
+        st.rerun()
+
+
+def render_questions():
+    st.subheader("❓ 질문 인박스 — 외국인 질문 수집 → 답변 → 발행")
+    next_box("사이트 검색에서 외국인이 로그인 없이 남긴 질문이 여기로 들어옵니다. 보고 → 답변 draft 생성 → "
+             "발행 후 published URL 연결 → (이메일 있으면) 알림. 질문은 public 에 자동 노출되지 않아요.")
+
+    if not questions.is_configured():
+        with st.expander("Supabase 연결  ⚠️ 필요", expanded=True):
+            st.markdown(
+                "1) **supabase.com → New project**\n"
+                "2) **SQL Editor** 에 `supabase/questions.sql` 실행\n"
+                "3) **Settings → API** 에서 Project URL + **service_role** key 복사 → 아래 저장\n\n"
+                "→ ⚠️ 같은 값을 **Vercel 프로젝트 env**(SUPABASE_URL, SUPABASE_SERVICE_KEY)에도 넣어야 사이트 제출이 동작합니다.")
+            u = st.text_input("SUPABASE_URL", value=getattr(config, "SUPABASE_URL", ""), key="sb_url_in")
+            k = st.text_input("SUPABASE_SERVICE_KEY", value=getattr(config, "SUPABASE_SERVICE_KEY", ""),
+                              type="password", key="sb_key_in")
+            if st.button("💾 저장", key="save_sb"):
+                s = storage.safe_load_json(config.SETTINGS_FILE, {}) or {}
+                s["SUPABASE_URL"] = (u or "").strip()
+                s["SUPABASE_SERVICE_KEY"] = (k or "").strip()
+                storage.safe_save_json(config.SETTINGS_FILE, s)
+                config.SUPABASE_URL = (u or "").strip()
+                config.SUPABASE_SERVICE_KEY = (k or "").strip()
+                st.cache_data.clear()
+                st.success("저장했어요. ✅")
+                st.rerun()
+        return
+
+    counts = questions.counts_by_status()
+    st.caption(f"전체 {counts.get('_total', 0)} · 🆕 new {counts.get('new', 0)} · reviewing {counts.get('reviewing', 0)} "
+               f"· draft {counts.get('draft_created', 0)} · published {counts.get('published', 0)} · spam {counts.get('spam', 0)}")
+
+    f = st.columns([2, 2, 3, 1])
+    status_f = f[0].selectbox("상태", ["all"] + _Q_STATUSES, key="q_status_f")
+    cat_f = f[1].selectbox("카테고리", _Q_CATS, key="q_cat_f")
+    search = f[2].text_input("검색(질문)", key="q_search_f")
+    if f[3].button("🔄 새로고침", key="q_refresh"):
+        st.cache_data.clear()
+        st.rerun()
+
+    rows = questions.list_questions(status=status_f, category=cat_f, search=search or None)
+    st.caption(f"{len(rows)}건 (최신순)")
+
+    for q in rows[:60]:
+        with st.container(border=True):
+            c = st.columns([6, 2, 1])
+            c[0].markdown(f"**{q.get('question', '')}**")
+            c[0].caption(
+                f"{q.get('category_guess') or '—'} · {q.get('intent_guess') or '—'} · "
+                f"{q.get('source_component') or ''} · {(q.get('created_at') or '')[:10]}"
+                + ("  · ✉️" if q.get("email") else ""))
+            c[1].markdown(f"`{q.get('status')}`")
+            if c[2].button("열기", key=f"q_open_{q['id']}"):
+                ss["q_sel"] = q["id"]
+                st.rerun()
+
+    if ss.get("q_sel"):
+        sel = next((x for x in rows if x["id"] == ss["q_sel"]), None)
+        if not sel:
+            sel = next((x for x in questions.list_questions(status="all", limit=1000) if x["id"] == ss["q_sel"]), None)
+        if sel:
+            st.divider()
+            _render_question_detail(sel)
+
+
+# ══════════════════════════════════════════════════════════════════════════
 #  메인
 # ══════════════════════════════════════════════════════════════════════════
 st.title("🛠️ Daebak 운영 콘솔")
@@ -836,5 +982,5 @@ st.divider()
 
 _VIEW_FN = {"기획·분류": render_plan, "생성·발행": render_generate, "라이브러리": render_library,
             "측정": render_measure, "갱신 관리": render_update, "빠른 발행": render_quick,
-            "이미지": render_images}
+            "이미지": render_images, "질문": render_questions}
 _VIEW_FN.get(ss["view"], render_plan)()

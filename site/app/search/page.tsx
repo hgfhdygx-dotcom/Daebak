@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AnswerCard from "@/components/AnswerCard";
+import AskDaebak from "@/components/AskDaebak";
 import SearchBar from "@/components/SearchBar";
 import SectionBand from "@/components/SectionBand";
 import LineIcon from "@/components/LineIcon";
@@ -13,10 +14,10 @@ export const metadata: Metadata = {
 };
 
 const SUGGESTIONS = [
-  "Incheon Airport to Seoul",
-  "Seoul subway with T-money",
-  "Where to stay in Seoul",
-  "What to buy in Korea",
+  "Olive Young must-buys",
+  "Best Korean sunscreen",
+  "Can foreigners use Coupang?",
+  "WOWPASS vs T-money",
 ];
 
 function Suggestions({ heading }: { heading: string }) {
@@ -62,7 +63,7 @@ export default async function SearchPage({
           {query ? "Search results" : "Search Korea guides"}
         </h1>
         <p className="mt-1.5 text-sm text-ink-muted">
-          Find a Korea travel question — answers with prices, routes, and sources.
+          What to buy, where to buy it, and how to get around Korea — sourced answers.
         </p>
         <SearchBar
           className="mt-5 max-w-2xl"
@@ -83,27 +84,43 @@ export default async function SearchPage({
         {!query ? (
           <Suggestions heading="Try a popular search" />
         ) : results.length ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((p, i) => (
-              <AnswerCard key={p.slug} post={p} variant="list" icon={resultIcons[i]} />
-            ))}
+          <div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {results.map((p, i) => (
+                <AnswerCard key={p.slug} post={p} variant="list" icon={resultIcons[i]} />
+              ))}
+            </div>
+            {/* 결과가 있어도 '딱 그건 아니면' 질문 유도(검색 + 질문 둘 다) */}
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-section px-5 py-4">
+              <p className="text-sm text-ink-muted">Didn&apos;t find exactly what you needed?</p>
+              <Link
+                href={`/ask?q=${encodeURIComponent(q)}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-accent px-4 py-1.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent hover:text-white"
+              >
+                Ask Daebak
+                <LineIcon name="arrow-right" className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         ) : (
-          <div className="max-w-xl">
-            {/* 작은 white panel fallback (큰 이미지 박스 금지) */}
+          <div className="max-w-2xl">
+            {/* 무결과 → 검색 먼저였고, 이제 질문 수집 */}
             <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card">
               <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-ink">
-                <LineIcon name="search" className="h-5 w-5" />
+                <LineIcon name="sparkles" className="h-5 w-5" />
               </span>
               <div>
                 <p className="font-display text-base font-bold tracking-tight text-ink">
-                  No results for “{q}”
+                  We don&apos;t have a clear answer for this yet.
                 </p>
-                <p className="mt-0.5 text-sm text-ink-muted">Try a different phrase, or one of these:</p>
+                <p className="mt-0.5 text-sm text-ink-muted">Ask Daebak and we may answer it soon.</p>
               </div>
             </div>
             <div className="mt-5">
-              <Suggestions heading="Popular searches" />
+              <AskDaebak initialQuestion={q} sourceComponent="search_page" sourcePage="/search" />
+            </div>
+            <div className="mt-6">
+              <Suggestions heading="Or try a popular search" />
             </div>
           </div>
         )}

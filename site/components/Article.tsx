@@ -11,6 +11,7 @@ import AffiliateDisclosure from "@/components/AffiliateDisclosure";
 import NextQuestions from "@/components/NextQuestions";
 import RelatedAnswers from "@/components/RelatedAnswers";
 import Sidebar, { AskCta } from "@/components/Sidebar";
+import AskInlineCta from "@/components/AskInlineCta";
 import Markdown from "@/components/Markdown";
 import { extractFirstTable } from "@/lib/markdownTable";
 import { readingTime } from "@/lib/readingTime";
@@ -104,6 +105,9 @@ export default function Article({
               </ul>
             </section>
           ) : null}
+
+          {/* 답이 부족하면 질문 수집(검색+질문 파이프라인) */}
+          <AskInlineCta q={post.question || post.title} className="mt-12" />
 
           {/* 모바일: 문의 CTA + 관련 답변 (사이드바 대체) */}
           <div className="mt-12 lg:hidden">

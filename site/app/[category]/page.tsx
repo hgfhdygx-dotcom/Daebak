@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 import CategoryHero from "@/components/CategoryHero";
 import ClusterCard from "@/components/ClusterCard";
+import AskInlineCta from "@/components/AskInlineCta";
 import QuickTopicChips from "@/components/QuickTopicChips";
 import JsonLd from "@/components/JsonLd";
 import {
@@ -115,6 +116,8 @@ export default async function CategoryPage({
           More {cat.title} guides are coming soon.
         </p>
       ) : null}
+
+      <AskInlineCta className="mt-10" />
     </div>
   );
 }

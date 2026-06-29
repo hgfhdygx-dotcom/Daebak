@@ -109,6 +109,17 @@ AUTHOR_BIO = "We research practical questions for foreigners living in or visiti
 # 광고처럼 과하게 X, 신뢰 우선. 웹앱에서 바꿀 수 있음(settings.json).
 AFFILIATE_DISCLOSURE_TEXT = "Some links are affiliate links — if you buy through them, Daebak may earn a small commission at no extra cost to you. It never changes our picks, facts, or sources."
 
+# ❓ 질문 인박스(Supabase) — 사이트(/api/ask)가 외국인 질문을 저장, admin 이 읽고 답변/발행 관리.
+# service_role 키는 admin(서버) 전용. 같은 값을 Vercel 프로젝트 env 에도 넣어야 사이트 제출이 동작.
+SUPABASE_URL = ""
+SUPABASE_SERVICE_KEY = ""
+# 📧 답변 발행 시 이메일 알림(선택, Resend). 없어도 사이트/admin 안 깨짐(수동 상태변경 가능).
+EMAIL_PROVIDER = "resend"
+RESEND_API_KEY = ""
+QUESTION_FROM_EMAIL = ""
+QUESTION_NOTIFY_EMAIL = ""          # (선택) 새 질문 알림 받을 내 이메일
+QUESTION_WEBHOOK_URL = ""           # (선택) 새 질문 웹훅(Discord/Slack 등) — 사이트 env 에도 넣으면 즉시 알림
+
 # 🖼 이미지(Unsplash) — bigCategory/cluster 대표 비주얼. hotlink(로컬 저장 X) + photographer attribution + Apply 시 download trigger.
 # ACCESS_KEY는 서버(admin) 전용. 키는 .env(.local) 또는 웹앱(Image Manager)에서 저장 → settings.json.
 UNSPLASH_ACCESS_KEY = ""
@@ -147,7 +158,9 @@ def _load_user_settings():
               "MAX_SUBQS", "ECONOMY_MODE", "DAILY_LIMIT", "MONTHLY_LIMIT", "MAX_COST_PER_RUN_KRW",
               "SITE_URL", "SITE_DIR", "SITE_CONTENT_DIR", "AUTHOR_NAME", "AUTHOR_BIO",
               "INDEXNOW_DRY_RUN", "UNSPLASH_ACCESS_KEY", "UNSPLASH_SECRET_KEY",
-              "UNSPLASH_APP_NAME", "UNSPLASH_API_BASE", "AFFILIATE_DISCLOSURE_TEXT"):
+              "UNSPLASH_APP_NAME", "UNSPLASH_API_BASE", "AFFILIATE_DISCLOSURE_TEXT",
+              "SUPABASE_URL", "SUPABASE_SERVICE_KEY", "EMAIL_PROVIDER", "RESEND_API_KEY",
+              "QUESTION_FROM_EMAIL", "QUESTION_NOTIFY_EMAIL", "QUESTION_WEBHOOK_URL"):
         if k in s and s[k] is not None:
             g[k] = s[k]
 
@@ -160,3 +173,8 @@ if not UNSPLASH_ACCESS_KEY:
     UNSPLASH_ACCESS_KEY = _os_env.getenv("UNSPLASH_ACCESS_KEY", "")
 if not UNSPLASH_SECRET_KEY:
     UNSPLASH_SECRET_KEY = _os_env.getenv("UNSPLASH_SECRET_KEY", "")
+# 질문 인박스(Supabase)/이메일 — .env 폴백
+for _qk in ("SUPABASE_URL", "SUPABASE_SERVICE_KEY", "RESEND_API_KEY", "QUESTION_FROM_EMAIL",
+            "QUESTION_NOTIFY_EMAIL", "QUESTION_WEBHOOK_URL"):
+    if not globals().get(_qk):
+        globals()[_qk] = _os_env.getenv(_qk, "")
