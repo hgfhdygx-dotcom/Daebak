@@ -4,7 +4,7 @@ import { getAllPosts, getHomeCategories } from "@/lib/posts";
 import type { Post } from "@/lib/posts";
 import CategoryCard from "@/components/CategoryCard";
 import PopularGuides from "@/components/PopularGuides";
-import SearchBar from "@/components/SearchBar";
+import AskDaebak from "@/components/AskDaebak";
 import SectionBand from "@/components/SectionBand";
 import SmartThumbnail from "@/components/SmartThumbnail";
 import Attribution from "@/components/Attribution";
@@ -95,24 +95,13 @@ export default function Home() {
               travel essentials — sourced answers, from a Korean local.
             </p>
 
-            <SearchBar className="mt-6" placeholder="What do you want to buy or understand in Korea?" />
+            {/* 홈 히어로 입력 = 질문칸(Ask Daebak). 검색은 헤더 우측에 있음. 예시 칩은 질문칸 prefill. */}
+            <AskDaebak className="mt-6" sourceComponent="home_search" examples={EXAMPLES} />
 
-            {/* 예시 칩 + 신뢰 한 줄(결합) */}
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {EXAMPLES.map((e) => (
-                <Link
-                  key={e}
-                  href={`/search?q=${encodeURIComponent(e)}`}
-                  className="rounded-full border border-line bg-surface/70 px-3 py-1 text-[0.8rem] text-ink-muted transition-colors hover:border-accent hover:text-accent-ink"
-                >
-                  {e}
-                </Link>
-              ))}
-              <span className="ml-0.5 hidden items-center gap-1.5 text-xs font-medium text-ink-soft sm:inline-flex">
-                <LineIcon name="check" className="h-3.5 w-3.5 text-trust" strokeWidth={2.25} />
-                Local · sourced · updated
-              </span>
-            </div>
+            <p className="mt-3 hidden items-center gap-1.5 text-xs font-medium text-ink-soft sm:flex">
+              <LineIcon name="check" className="h-3.5 w-3.5 text-trust" strokeWidth={2.25} />
+              Local · sourced · updated
+            </p>
           </div>
 
           {/* RIGHT — 큰 비주얼(좌우 빈 공간 제거). 모바일은 숨겨 검색 우선. */}

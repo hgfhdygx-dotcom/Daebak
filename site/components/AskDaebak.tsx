@@ -22,15 +22,18 @@ export default function AskDaebak({
   initialQuestion = "",
   sourceComponent = "ask_page",
   sourcePage,
+  className = "",
+  examples = [],
 }: {
   initialQuestion?: string;
   sourceComponent?: "home_search" | "search_page" | "answer_page" | "category_page" | "ask_page";
   sourcePage?: string;
+  className?: string;
+  examples?: string[]; // 클릭하면 질문칸에 채워지는 예시
 }) {
   const [question, setQuestion] = useState(initialQuestion);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [notify, setNotify] = useState(true);
   const [website, setWebsite] = useState(""); // honeypot — humans never see it
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -49,7 +52,7 @@ export default function AskDaebak({
           question,
           email: email || undefined,
           name: name || undefined,
-          notifyOnAnswer: Boolean(email) && notify,
+          notifyOnAnswer: Boolean(email),
           website,
           sourceComponent,
           sourcePage: sourcePage || (typeof window !== "undefined" ? window.location.pathname : undefined),
@@ -76,7 +79,7 @@ export default function AskDaebak({
 
   if (result) {
     return (
-      <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+      <div className={"rounded-2xl border border-line bg-surface p-5 sm:p-6 " + className}>
         <p className="inline-flex items-center gap-2 text-sm font-semibold text-trust">
           <LineIcon name="check" className="h-4 w-4" strokeWidth={2.25} />
           Question sent
@@ -115,7 +118,7 @@ export default function AskDaebak({
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+    <form onSubmit={submit} className={"rounded-2xl border border-line bg-surface p-5 sm:p-6 " + className}>
       <label htmlFor="ask-q" className="block text-sm font-semibold text-ink">
         Ask Daebak
       </label>
@@ -133,6 +136,21 @@ export default function AskDaebak({
         placeholder="e.g. What should I buy at Olive Young?"
         className="mt-3 w-full resize-y rounded-xl border border-line bg-bg px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-soft focus:border-accent"
       />
+
+      {examples.length ? (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {examples.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              onClick={() => setQuestion(ex)}
+              className="rounded-full border border-line bg-bg px-2.5 py-1 text-xs text-ink-muted transition-colors hover:border-accent hover:text-accent-ink"
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {/* honeypot — 시각적으로 숨김, 봇만 채움 */}
       <input
@@ -175,14 +193,9 @@ export default function AskDaebak({
         </div>
       </div>
 
-      {email ? (
-        <label className="mt-3 flex items-center gap-2 text-sm text-ink-muted">
-          <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="h-4 w-4 accent-[var(--color-accent)]" />
-          Notify me if Daebak publishes an answer
-        </label>
-      ) : (
-        <p className="mt-2 text-xs text-ink-soft">Leave your email if you want us to notify you when we answer.</p>
-      )}
+      <p className="mt-2 text-xs text-ink-soft">
+        Leave your email if you want us to notify you when we answer — optional.
+      </p>
 
       {error ? <p className="mt-3 text-sm text-brand">{error}</p> : null}
 
