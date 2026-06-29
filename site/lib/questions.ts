@@ -3,8 +3,15 @@
 // 스토리지는 이 파일 뒤로 추상화 — 나중에 다른 DB 로 바꿔도 호출부(route/status/admin)는 그대로.
 import crypto from "node:crypto";
 
-const SB_URL = process.env.SUPABASE_URL || "";
-const SB_KEY = process.env.SUPABASE_SERVICE_KEY || "";
+// 흔한 붙여넣기 실수 보정: 앞뒤 공백/끝 슬래시 제거, http(s):// 없으면 https:// 붙임.
+function normalizeSupabaseUrl(u: string): string {
+  u = (u || "").trim().replace(/\/+$/, "");
+  if (u && !/^https?:\/\//i.test(u)) u = "https://" + u;
+  return u;
+}
+
+const SB_URL = normalizeSupabaseUrl(process.env.SUPABASE_URL || "");
+const SB_KEY = (process.env.SUPABASE_SERVICE_KEY || "").trim();
 const IP_SALT = process.env.QUESTION_IP_SALT || "daebak-default-salt";
 
 export type QuestionIntent =
@@ -171,7 +178,7 @@ export async function diagnose(): Promise<{ configured: boolean; ok: boolean; st
       return { configured: true, ok: false, status: r.status, hint: "questions table not found — run supabase/questions.sql in the Supabase SQL Editor." };
     return { configured: true, ok: false, status: r.status, hint: `Supabase returned ${r.status}. Check SUPABASE_URL and that the SQL ran.` };
   } catch {
-    return { configured: true, ok: false, hint: "Could not reach Supabase — check SUPABASE_URL (should look like https://xxxx.supabase.co)." };
+    return { configured: true, ok: false, hint: "Could not reach Supabase. SUPABASE_URL must be the Project URL from Settings → API (https://xxxx.supabase.co) — not the dashboard link, not the postgres connection string. Check for typos/spaces, then Redeploy." };
   }
 }
 

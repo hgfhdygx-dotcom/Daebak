@@ -21,7 +21,10 @@ def is_configured() -> bool:
 
 
 def _base() -> str:
-    return (getattr(config, "SUPABASE_URL", "") or "").rstrip("/")
+    u = (getattr(config, "SUPABASE_URL", "") or "").strip().rstrip("/")
+    if u and not u.startswith(("http://", "https://")):
+        u = "https://" + u
+    return u
 
 
 def _headers(extra: dict | None = None) -> dict:
