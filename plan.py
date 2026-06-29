@@ -63,6 +63,25 @@ def _save(items):
     return storage.safe_save_json(_path(), items)
 
 
+def delete(plan_id: str) -> bool:
+    items = load_plan()
+    rest = [x for x in items if x.get("plan_id") != plan_id]
+    if len(rest) == len(items):
+        return False
+    _save(rest)
+    return True
+
+
+def delete_many(plan_ids) -> int:
+    ids = set(plan_ids or [])
+    items = load_plan()
+    rest = [x for x in items if x.get("plan_id") not in ids]
+    n = len(items) - len(rest)
+    if n:
+        _save(rest)
+    return n
+
+
 def _norm_q(s: str) -> str:
     return " ".join((s or "").strip().lower().split())
 

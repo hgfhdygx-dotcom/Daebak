@@ -291,6 +291,17 @@ def render_plan():
         st.rerun()
     cc2.caption("표를 고친 뒤 저장하면 클러스터/슬러그가 자동 재계산됩니다.")
 
+    with st.expander("🗑 기획 행 삭제 (테스트/불필요 행 제거 — 되돌릴 수 없음)"):
+        _del_opts = {
+            f"{r.get('plan_id')} · {(r.get('question') or r.get('title') or '')[:50]}": r.get("plan_id")
+            for r in all_rows
+        }
+        _del_picks = st.multiselect("삭제할 행 선택", list(_del_opts.keys()), key="plan_del_sel")
+        if st.button("🗑 선택 삭제", key="plan_del_btn", disabled=not _del_picks):
+            n = plan.delete_many([_del_opts[p] for p in _del_picks])
+            st.success(f"{n}개 삭제했어요.")
+            st.rerun()
+
     if ss.get("plan_saved"):
         rows2 = plan.load_plan()
         pil = sum(1 for r in rows2 if r.get("questionType") == "pillar")
@@ -918,9 +929,20 @@ def _render_question_detail(q: dict):
     if not questions.email_configured():
         b[2].caption("이메일(Resend) 미설정")
 
-    if st.button("✖ 닫기", key=f"q_close_{qid}"):
+    st.divider()
+    cdel = st.columns([1, 2, 3])
+    if cdel[0].button("✖ 닫기", key=f"q_close_{qid}"):
         ss.pop("q_sel", None)
         st.rerun()
+    confirm = cdel[1].checkbox("영구 삭제 확인", key=f"q_delchk_{qid}")
+    if cdel[2].button("🗑 질문 삭제", key=f"q_del_{qid}", disabled=not confirm):
+        if questions.delete_question(qid):
+            ss.pop("q_sel", None)
+            st.cache_data.clear()
+            st.success("삭제했어요.")
+            st.rerun()
+        else:
+            st.error("삭제 실패")
 
 
 def render_questions():

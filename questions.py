@@ -99,6 +99,17 @@ def update_question(qid: str, fields: dict) -> dict | None:
         return None
 
 
+def delete_question(qid: str) -> bool:
+    """질문 영구 삭제(테스트/스팸 정리용). 되돌릴 수 없음."""
+    if not is_configured():
+        return False
+    try:
+        _request("DELETE", "questions", {"id": f"eq.{qid}"})
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def status_url(token: str) -> str:
     base = (getattr(config, "SITE_URL", "") or "").rstrip("/")
     return f"{base}/questions/status/{token}" if base else f"/questions/status/{token}"
