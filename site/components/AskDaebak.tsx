@@ -193,10 +193,6 @@ export default function AskDaebak({
         </div>
       </div>
 
-      <p className="mt-2 text-xs text-ink-soft">
-        Leave your email if you want us to notify you when we answer — optional.
-      </p>
-
       {error ? <p className="mt-3 text-sm text-brand">{error}</p> : null}
 
       <button
