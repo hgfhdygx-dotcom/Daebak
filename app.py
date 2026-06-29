@@ -888,8 +888,8 @@ def _render_question_detail(q: dict):
         questions.update_question(qid, {"published_url": (pub or "").strip(), "status": "published"})
         st.success("연결했어요 → status published ✅")
         st.rerun()
-    # 3) 이메일 알림
-    if b[2].button("📧 이메일 알림 발송", key=f"q_email_{qid}"):
+    # 3) 질문자에게 답변 알림 — '발행 후'에만(published URL 연결 필수). 답장-to-질문자 자동구조 아님.
+    if b[2].button("📧 Send notification", key=f"q_email_{qid}"):
         if not q.get("email"):
             st.warning("이메일 없는 질문이에요.")
         elif not (q.get("published_url") or "").strip():

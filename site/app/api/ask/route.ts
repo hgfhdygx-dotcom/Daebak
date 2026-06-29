@@ -4,10 +4,12 @@ import {
   createQuestion,
   validateSubmission,
   isConfigured,
+  guessIntent,
   RateLimitError,
   NotConfiguredError,
   type CreateQuestionInput,
 } from "@/lib/questions";
+import { notifyAdminNewQuestion, fireWebhook } from "@/lib/email";
 
 export const runtime = "nodejs"; // node:crypto 필요(edge 불가)
 export const dynamic = "force-dynamic";
@@ -50,16 +52,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const { publicToken, statusPath, displayId } = await createQuestion(input);
-    // (선택) 새 질문 즉시 알림 — Discord/Slack 호환. 실패해도 절대 막지 않음(fire-and-forget).
-    const hook = process.env.QUESTION_WEBHOOK_URL;
-    if (hook) {
-      const msg = `New Daebak question ${displayId}: ${question.slice(0, 300)}`;
-      fetch(hook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: msg, text: msg }),
-      }).catch(() => {});
-    }
+    // 새 질문 알림: ① 관리자 이메일(Resend) ② (선택) 웹훅. 질문자에게는 '발행 후'에만(admin 의 Send notification).
+    // 서버리스는 응답 후 비동기를 못 끝낼 수 있어 await(실패해도 제출 자체는 성공으로 응답).
+    await Promise.allSettled([
+      notifyAdminNewQuestion({
+        question,
+        displayId,
+        intentGuess: guessIntent(question),
+        hasEmail: Boolean(input.email),
+      }),
+      fireWebhook(`New Daebak question ${displayId}: ${question.slice(0, 300)}`),
+    ]);
     return NextResponse.json({ ok: true, publicToken, statusPath, displayId });
   } catch (e) {
     if (e instanceof RateLimitError) return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
