@@ -946,6 +946,54 @@ def _render_question_detail(q: dict):
     if not questions.email_configured():
         b[2].caption("이메일(Resend) 미설정")
 
+    # ── 🌐 공개 Ask 로 발행 (Good·댓글·공유 가능) + 댓글 관리 ──
+    with st.expander("🌐 공개 Ask 발행 + 댓글 관리", expanded=bool(q.get("is_public"))):
+        pt = st.text_input("공개 제목 (publicTitle)", value=q.get("public_title") or q.get("question") or "",
+                           key=f"q_pt_{qid}")
+        ps = st.text_input("slug (비우면 제목에서 자동)", value=q.get("public_slug") or "", key=f"q_ps_{qid}")
+        pv = st.text_area("Daebak verdict (짧은 판정/요지)", value=q.get("daebak_verdict") or "",
+                          key=f"q_pv_{qid}", height=80)
+        psum = st.text_area("공개 요약 (publicSummary, 선택)", value=q.get("public_summary") or "",
+                            key=f"q_psum_{qid}", height=80)
+        rg_lines = "\n".join(f"{(g or {}).get('label', '')} | {(g or {}).get('url', '')}"
+                             for g in (q.get("related_guides") or []))
+        rg_text = st.text_area("관련 가이드 (한 줄에 '라벨 | /url')", value=rg_lines, key=f"q_rg_{qid}", height=70)
+        pcols = st.columns(2)
+        if pcols[0].button("✅ 공개 발행", type="primary", key=f"q_pubpub_{qid}"):
+            rg = []
+            for line in rg_text.splitlines():
+                if "|" in line:
+                    lab, url = line.split("|", 1)
+                    if lab.strip() and url.strip():
+                        rg.append({"label": lab.strip(), "url": url.strip()})
+            rec = questions.publish_public(qid, pt, ps, psum, pv, rg)
+            if rec:
+                st.success(f"공개 발행 ✅ — /ask/{rec.get('public_slug')}")
+                st.rerun()
+            else:
+                st.error("발행 실패")
+        if q.get("is_public"):
+            pcols[0].caption(f"공개 중: /ask/{q.get('public_slug')} · Good {q.get('good_count', 0)} · 댓글 {q.get('comment_count', 0)}")
+            if pcols[1].button("🔒 공개 해제", key=f"q_unpub_{qid}"):
+                questions.unpublish_public(qid)
+                st.success("공개 해제했어요.")
+                st.rerun()
+
+        st.markdown("**댓글 관리**")
+        cmts = questions.list_question_comments(qid)
+        if not cmts:
+            st.caption("댓글 없음")
+        for c in cmts:
+            cco = st.columns([5, 1, 1])
+            cco[0].markdown(f"`{c.get('status')}` **{c.get('nickname') or 'Visitor'}** — {(c.get('comment') or '')[:120]}")
+            _vis = c.get("status") == "visible"
+            if cco[1].button("숨김" if _vis else "표시", key=f"cmt_t_{c['id']}"):
+                questions.set_comment_status(c["id"], "hidden" if _vis else "visible")
+                st.rerun()
+            if cco[2].button("🗑", key=f"cmt_d_{c['id']}"):
+                questions.delete_comment(c["id"])
+                st.rerun()
+
     st.divider()
     cdel = st.columns([1, 2, 3])
     if cdel[0].button("✖ 닫기", key=f"q_close_{qid}"):

@@ -38,7 +38,22 @@ export type PublicQuestionView = {
   publishedUrl?: string;
   answerSummary?: string;
   displayId?: string; // "Question 000001" (표시용 — 조회 키 아님)
+  isPublic?: boolean;
+  publicSlug?: string; // 공개 발행됐으면 /ask/[slug] 로 연결
 };
+
+export type RelatedGuide = { label: string; url: string };
+export type PublicAsk = {
+  slug: string;
+  title: string;
+  verdict?: string;
+  summary?: string;
+  goodCount: number;
+  commentCount: number;
+  publishedAt?: string;
+  relatedGuides?: RelatedGuide[];
+};
+export type AskComment = { id: string; nickname?: string; comment: string; createdAt: string };
 
 export class RateLimitError extends Error {}
 export class NotConfiguredError extends Error {}
@@ -115,7 +130,7 @@ async function sbCountRecentByIp(ipHash: string, sinceIso: string): Promise<numb
 async function sbSelectByToken(token: string): Promise<Record<string, string> | null> {
   const qs = new URLSearchParams({
     public_token: `eq.${token}`,
-    select: "question,status,category_guess,published_url,answer_summary,created_at,display_id",
+    select: "question,status,category_guess,published_url,answer_summary,created_at,display_id,is_public,public_slug",
     limit: "1",
   });
   const r = await fetch(`${SB_URL}/rest/v1/questions?${qs}`, { headers: sbHeaders() });
@@ -155,7 +170,7 @@ export async function createQuestion(
   });
   return {
     publicToken: token,
-    statusPath: `/questions/status/${token}`,
+    statusPath: `/ask/submitted/${token}`,
     displayId: (inserted.display_id as string) || "",
   };
 }
@@ -194,5 +209,161 @@ export async function getPublicQuestion(token: string): Promise<PublicQuestionVi
     publishedUrl: row.published_url || undefined,
     answerSummary: row.answer_summary || undefined,
     displayId: row.display_id || undefined,
+    isPublic: row.is_public === "true" || (row.is_public as unknown) === true,
+    publicSlug: row.public_slug || undefined,
   };
+}
+
+// ── 공개 Ask 커뮤니티 (목록 / 상세 / Good / 댓글) ──────────────────────────
+async function sbReq(
+  method: string,
+  path: string,
+  params?: Record<string, string>,
+  body?: unknown,
+  extra?: Record<string, string>,
+): Promise<{ ok: boolean; status: number; data: unknown; range: string | null }> {
+  let url = `${SB_URL}/rest/v1/${path}`;
+  if (params) url += "?" + new URLSearchParams(params).toString();
+  const r = await fetch(url, {
+    method,
+    headers: sbHeaders(extra),
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const text = await r.text();
+  let data: unknown = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+  return { ok: r.ok, status: r.status, data, range: r.headers.get("content-range") };
+}
+
+const PUBLIC_SELECT =
+  "id,public_slug,public_title,daebak_verdict,public_summary,good_count,comment_count,published_at,related_guides";
+
+function toPublicAsk(row: Record<string, unknown>): PublicAsk {
+  const rg = row.related_guides;
+  return {
+    slug: String(row.public_slug),
+    title: (row.public_title as string) || "Daebak question",
+    verdict: (row.daebak_verdict as string) || undefined,
+    summary: (row.public_summary as string) || undefined,
+    goodCount: Number(row.good_count) || 0,
+    commentCount: Number(row.comment_count) || 0,
+    publishedAt: (row.published_at as string) || undefined,
+    relatedGuides: Array.isArray(rg) ? (rg as RelatedGuide[]) : undefined,
+  };
+}
+
+function visitorHash(ip: string | null | undefined, vid?: string): string {
+  return crypto.createHash("sha256").update(`${IP_SALT}:${ip || "noip"}:${vid || ""}`).digest("hex");
+}
+
+export async function getPublicAsks(sort: "good" | "latest" = "good", limit = 60): Promise<PublicAsk[]> {
+  if (!isConfigured()) return [];
+  const order = sort === "latest" ? "published_at.desc" : "good_count.desc,published_at.desc";
+  const { ok, data } = await sbReq("GET", "questions", {
+    is_public: "eq.true",
+    select: PUBLIC_SELECT,
+    order,
+    limit: String(limit),
+  });
+  if (!ok || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).filter((r) => r.public_slug).map(toPublicAsk);
+}
+
+export async function getPublicAskBySlug(slug: string): Promise<(PublicAsk & { id: string }) | null> {
+  if (!isConfigured() || !slug) return null;
+  const { ok, data } = await sbReq("GET", "questions", {
+    public_slug: `eq.${slug}`,
+    is_public: "eq.true",
+    select: PUBLIC_SELECT,
+    limit: "1",
+  });
+  if (!ok || !Array.isArray(data) || !data[0]) return null;
+  const row = data[0] as Record<string, unknown>;
+  return { ...toPublicAsk(row), id: String(row.id) };
+}
+
+export async function addGood(slug: string, ip: string | null, vid?: string): Promise<"added" | "already" | "notfound"> {
+  if (!isConfigured()) return "notfound";
+  const ask = await getPublicAskBySlug(slug);
+  if (!ask) return "notfound";
+  const { ok, status } = await sbReq(
+    "POST",
+    "ask_goods",
+    undefined,
+    { question_id: ask.id, visitor_hash: visitorHash(ip, vid) },
+    { Prefer: "return=minimal" },
+  );
+  if (ok) return "added";
+  return status === 409 ? "already" : "already"; // 중복(409)/기타 실패 모두 사용자에겐 에러 안 냄
+}
+
+export function validateComment(input: { comment?: string; website?: string }): { ok: boolean; reason?: string } {
+  if ((input.website || "").trim()) return { ok: false, reason: "spam" };
+  const c = (input.comment || "").trim();
+  if (c.length < 1) return { ok: false, reason: "empty" };
+  if (c.length > 500) return { ok: false, reason: "too_long" };
+  if ((c.match(/https?:\/\//gi) || []).length > 1) return { ok: false, reason: "too_many_links" };
+  return { ok: true };
+}
+
+export async function listComments(slug: string, limit = 100): Promise<AskComment[]> {
+  if (!isConfigured()) return [];
+  const ask = await getPublicAskBySlug(slug);
+  if (!ask) return [];
+  const { ok, data } = await sbReq("GET", "ask_comments", {
+    question_id: `eq.${ask.id}`,
+    status: "eq.visible",
+    select: "id,nickname,comment,created_at",
+    order: "created_at.desc",
+    limit: String(limit),
+  });
+  if (!ok || !Array.isArray(data)) return [];
+  return (data as Record<string, string>[]).map((r) => ({
+    id: r.id,
+    nickname: r.nickname || undefined,
+    comment: r.comment,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function addComment(
+  slug: string,
+  input: { nickname?: string; comment: string; website?: string },
+  ip: string | null,
+  vid?: string,
+): Promise<"added" | "notfound" | "invalid" | "rate_limited"> {
+  if (!isConfigured()) return "notfound";
+  const v = validateComment(input);
+  if (!v.ok) return v.reason === "spam" ? "added" : "invalid"; // honeypot → 성공한 척
+  const ask = await getPublicAskBySlug(slug);
+  if (!ask) return "notfound";
+  const vh = visitorHash(ip, vid);
+  const since = new Date(Date.now() - 5 * 60_000).toISOString();
+  const cnt = await sbReq(
+    "GET",
+    "ask_comments",
+    { visitor_hash: `eq.${vh}`, created_at: `gt.${since}`, select: "id" },
+    undefined,
+    { Prefer: "count=exact", Range: "0-0" },
+  );
+  const total = cnt.range && cnt.range.includes("/") ? parseInt(cnt.range.split("/")[1] || "0", 10) : 0;
+  if (total >= 5) return "rate_limited";
+  const { ok } = await sbReq(
+    "POST",
+    "ask_comments",
+    undefined,
+    {
+      question_id: ask.id,
+      nickname: (input.nickname || "").trim().slice(0, 40) || null,
+      comment: input.comment.trim(),
+      visitor_hash: vh,
+      status: "visible",
+    },
+    { Prefer: "return=minimal" },
+  );
+  return ok ? "added" : "notfound";
 }

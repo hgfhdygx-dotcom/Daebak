@@ -99,3 +99,74 @@ drop trigger if exists questions_touch on public.questions;
 create trigger questions_touch
   before update on public.questions
   for each row execute function public.touch_updated_at();
+
+-- ============================================================================
+-- Ask community: public questions + Good votes + comments. SAFE TO RE-RUN.
+-- ============================================================================
+alter table public.questions add column if not exists is_public      boolean not null default false;
+alter table public.questions add column if not exists public_slug     text;
+alter table public.questions add column if not exists public_title    text;
+alter table public.questions add column if not exists public_summary  text;
+alter table public.questions add column if not exists daebak_verdict  text;
+alter table public.questions add column if not exists related_guides  jsonb;
+alter table public.questions add column if not exists good_count      integer not null default 0;
+alter table public.questions add column if not exists comment_count   integer not null default 0;
+alter table public.questions add column if not exists published_at    timestamptz;
+
+create unique index if not exists questions_public_slug_uidx on public.questions (public_slug) where public_slug is not null;
+create index if not exists questions_public_latest_idx on public.questions (is_public, published_at desc);
+create index if not exists questions_public_good_idx   on public.questions (is_public, good_count desc);
+
+create table if not exists public.ask_goods (
+  id           uuid primary key default gen_random_uuid(),
+  question_id  uuid not null references public.questions(id) on delete cascade,
+  visitor_hash text not null,
+  created_at   timestamptz not null default now(),
+  unique (question_id, visitor_hash)
+);
+create index if not exists ask_goods_q_idx on public.ask_goods (question_id);
+
+create table if not exists public.ask_comments (
+  id           uuid primary key default gen_random_uuid(),
+  question_id  uuid not null references public.questions(id) on delete cascade,
+  nickname     text,
+  comment      text not null,
+  status       text not null default 'visible',   -- visible | hidden | spam
+  visitor_hash text,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create index if not exists ask_comments_q_idx on public.ask_comments (question_id, created_at desc);
+
+alter table public.ask_goods enable row level security;
+alter table public.ask_comments enable row level security;
+
+-- good_count stays in sync with ask_goods.
+create or replace function public.ask_goods_count() returns trigger as $$
+begin
+  if (TG_OP = 'INSERT') then
+    update public.questions set good_count = good_count + 1 where id = new.question_id;
+  elsif (TG_OP = 'DELETE') then
+    update public.questions set good_count = greatest(good_count - 1, 0) where id = old.question_id;
+  end if;
+  return null;
+end;
+$$ language plpgsql;
+drop trigger if exists ask_goods_count_trg on public.ask_goods;
+create trigger ask_goods_count_trg after insert or delete on public.ask_goods
+  for each row execute function public.ask_goods_count();
+
+-- comment_count = number of visible comments.
+create or replace function public.ask_comments_count() returns trigger as $$
+declare qid uuid;
+begin
+  qid := coalesce(new.question_id, old.question_id);
+  update public.questions set comment_count =
+    (select count(*) from public.ask_comments where question_id = qid and status = 'visible')
+    where id = qid;
+  return null;
+end;
+$$ language plpgsql;
+drop trigger if exists ask_comments_count_trg on public.ask_comments;
+create trigger ask_comments_count_trg after insert or update or delete on public.ask_comments
+  for each row execute function public.ask_comments_count();

@@ -70,6 +70,9 @@ function SiteHeader() {
             >
               For Brands
             </Link>
+            <Link href="/ask" className="text-ink-muted transition-colors hover:text-ink">
+              Ask
+            </Link>
           </nav>
         </div>
 
@@ -139,6 +142,12 @@ function SiteHeader() {
                 className="mt-1 block rounded-lg px-3 py-2 text-sm text-ink hover:bg-section"
               >
                 For Brands
+              </Link>
+              <Link
+                href="/ask"
+                className="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-section"
+              >
+                Ask
               </Link>
             </div>
           </details>

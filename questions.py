@@ -9,8 +9,10 @@ service_role 키는 admin(서버) 전용. 키 없으면 is_configured()=False �
 from __future__ import annotations
 
 import json
+import re
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 
 import config
 
@@ -105,6 +107,82 @@ def delete_question(qid: str) -> bool:
         return False
     try:
         _request("DELETE", "questions", {"id": f"eq.{qid}"})
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+# ── 공개 Ask 발행 + 댓글 관리 ────────────────────────────────────────────────
+def _slugify(text: str) -> str:
+    s = re.sub(r"[^a-z0-9]+", "-", (text or "").lower()).strip("-")
+    return s[:60] or "ask"
+
+
+def _slug_exists(slug: str, exclude_qid: str | None = None) -> bool:
+    if not is_configured():
+        return False
+    try:
+        rows, _ = _request("GET", "questions", {"public_slug": f"eq.{slug}", "select": "id"})
+        return any(r.get("id") != exclude_qid for r in rows)
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def unique_slug(slug: str, qid: str) -> str:
+    base = _slugify(slug)
+    if not _slug_exists(base, qid):
+        return base
+    i = 2
+    while _slug_exists(f"{base}-{i}", qid):
+        i += 1
+    return f"{base}-{i}"
+
+
+def publish_public(qid, title, slug, summary, verdict, related_guides):
+    """질문을 공개 Ask 로 발행 — is_public=true, status=published, slug/제목/요약/verdict/관련가이드 저장."""
+    fields = {
+        "is_public": True,
+        "status": "published",
+        "public_title": (title or "").strip() or "Daebak question",
+        "public_slug": unique_slug(slug or title, qid),
+        "public_summary": (summary or "").strip() or None,
+        "daebak_verdict": (verdict or "").strip() or None,
+        "related_guides": related_guides if related_guides else None,
+        "published_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+    }
+    return update_question(qid, fields)
+
+
+def unpublish_public(qid):
+    return update_question(qid, {"is_public": False, "status": "reviewing"})
+
+
+def list_question_comments(qid):
+    if not is_configured():
+        return []
+    try:
+        rows, _ = _request("GET", "ask_comments",
+                           {"question_id": f"eq.{qid}", "select": "*", "order": "created_at.desc"})
+        return rows
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def set_comment_status(comment_id, status):
+    if not is_configured():
+        return False
+    try:
+        _request("PATCH", "ask_comments", {"id": f"eq.{comment_id}"}, {"status": status})
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def delete_comment(comment_id):
+    if not is_configured():
+        return False
+    try:
+        _request("DELETE", "ask_comments", {"id": f"eq.{comment_id}"})
         return True
     except Exception:  # noqa: BLE001
         return False

@@ -37,6 +37,11 @@ export async function POST(req: NextRequest) {
     if (v.reason === "spam") return NextResponse.json({ ok: true, spam: true });
     return NextResponse.json({ ok: false, error: v.reason }, { status: 400 });
   }
+  // /ask 페이지는 이메일 필수(requireEmail). 홈 히어로는 선택.
+  const email = str(body.email);
+  if (body.requireEmail === true && (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+    return NextResponse.json({ ok: false, error: "email_required" }, { status: 400 });
+  }
   if (!isConfigured()) return NextResponse.json({ ok: false, error: "not_configured" }, { status: 503 });
 
   const input: CreateQuestionInput = {
