@@ -48,7 +48,7 @@ export default async function StatusPage({ params }: { params: Promise<{ token: 
       return "";
     }
   })();
-  const isPublished = (q.status === "published" || q.status === "answered") && q.publishedUrl;
+  const answered = q.status === "published" || q.status === "answered";
 
   return (
     <div className="mx-auto max-w-[640px] px-5 py-12 sm:px-8 lg:py-16">
@@ -72,17 +72,26 @@ export default async function StatusPage({ params }: { params: Promise<{ token: 
 
         <div className="mt-4 border-t border-line pt-4">
           <p className={`inline-flex items-center gap-1.5 text-sm font-semibold ${copy.tone}`}>
-            <LineIcon name={isPublished ? "check" : "clock"} className="h-4 w-4" strokeWidth={2.25} />
+            <LineIcon name={answered ? "check" : "clock"} className="h-4 w-4" strokeWidth={2.25} />
             {copy.label}
           </p>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{copy.text}</p>
 
-          {isPublished ? (
+          {q.answerSummary ? (
+            <div className="mt-4 rounded-xl border border-line bg-bg p-4">
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-accent-ink">
+                Daebak&apos;s answer
+              </p>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">{q.answerSummary}</p>
+            </div>
+          ) : null}
+
+          {answered && q.publishedUrl ? (
             <Link
-              href={q.publishedUrl as string}
+              href={q.publishedUrl}
               className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
             >
-              Read the guide
+              Read the full guide
               <LineIcon name="arrow-right" className="h-4 w-4" />
             </Link>
           ) : null}

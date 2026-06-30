@@ -169,9 +169,12 @@ def send_answer_email(q: dict) -> str:
     if not email_configured():
         return "not_configured"
     to = (q.get("email") or "").strip()
-    url = (q.get("published_url") or "").strip()
-    if not to or not url:
+    if not to:
         return "skipped"
+    # 정식 답변 페이지가 있으면 그 URL, 없으면(직접 답변) 상태 페이지(답변이 거기 표시됨)로 링크.
+    if not ((q.get("published_url") or "").strip() or (q.get("answer_summary") or "").strip()):
+        return "skipped"
+    url = (q.get("published_url") or "").strip() or status_url(q.get("public_token", ""))
     did = q.get("display_id") or ""
     body = {
         "from": config.QUESTION_FROM_EMAIL,

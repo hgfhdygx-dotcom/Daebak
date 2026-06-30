@@ -894,7 +894,24 @@ def _render_question_detail(q: dict):
         st.success("저장했어요. ✅")
         st.rerun()
 
+    # ── ✍️ 직접 답변 — 발행하면 질문자 상태 페이지에 바로 표시 (가장 쉬운 답변 방법) ──
     st.divider()
+    st.markdown("**✍️ 답변 작성** — 발행하면 질문자 상태 페이지에 바로 표시됩니다.")
+    answer = st.text_area("답변 (마크다운 가능)", value=q.get("answer_summary") or "",
+                          key=f"q_ans_{qid}", height=160, placeholder="질문자에게 보여줄 답변을 적으세요.")
+    ac = st.columns([1, 1, 2])
+    if ac[0].button("💾 답변 저장 (비공개)", key=f"q_anssave_{qid}"):
+        questions.update_question(qid, {"answer_summary": answer})
+        st.success("저장했어요 (아직 비공개).")
+        st.rerun()
+    if ac[1].button("✅ 답변 발행 (공개)", type="primary", key=f"q_anspub_{qid}"):
+        questions.update_question(qid, {"answer_summary": answer, "status": "published"})
+        st.success("발행했어요 — 질문자 상태 페이지에 표시됩니다. 이메일 있으면 아래 '질문자에게 알림 보내기'.")
+        st.rerun()
+
+    # ── 고급: 정식 가이드 페이지(/answers)로 만들기 (선택) ──
+    st.divider()
+    st.caption("고급 — 정식 가이드 페이지(/answers)로 발행하려면 (선택):")
     b = st.columns(3)
     # 1) 답변 초안 생성 → 콘텐츠 파이프라인(① 기획·분류)으로 바로 이동
     if b[0].button("📝 답변 초안 생성", key=f"q_draft_{qid}"):
@@ -918,8 +935,8 @@ def _render_question_detail(q: dict):
     if b[2].button("📧 질문자에게 알림 보내기", key=f"q_email_{qid}"):
         if not q.get("email"):
             st.warning("이메일 없는 질문이에요.")
-        elif not (q.get("published_url") or "").strip():
-            st.warning("먼저 발행된 답변 URL 을 연결하세요(답변 페이지 없이 발송 금지).")
+        elif not ((q.get("published_url") or "").strip() or (q.get("answer_summary") or "").strip()):
+            st.warning("먼저 답변을 발행하세요 (직접 답변 또는 발행된 URL).")
         else:
             res = questions.send_answer_email(q)
             questions.update_question(qid, {"notification_status": res,
