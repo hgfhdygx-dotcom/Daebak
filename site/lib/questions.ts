@@ -128,15 +128,18 @@ async function sbCountRecentByIp(ipHash: string, sinceIso: string): Promise<numb
 }
 
 async function sbSelectByToken(token: string): Promise<Record<string, string> | null> {
-  const qs = new URLSearchParams({
-    public_token: `eq.${token}`,
-    select: "question,status,category_guess,published_url,answer_summary,created_at,display_id,is_public,public_slug",
-    limit: "1",
-  });
-  const r = await fetch(`${SB_URL}/rest/v1/questions?${qs}`, { headers: sbHeaders() });
-  if (!r.ok) return null;
-  const data = (await r.json()) as Record<string, string>[];
-  return data[0] || null;
+  // full = Ask 컬럼 포함. 아직 SQL 재실행 전이면 그 컬럼이 없어 실패 → core 로 폴백(페이지 안 깨짐).
+  const full = "question,status,category_guess,published_url,answer_summary,created_at,display_id,is_public,public_slug";
+  const core = "question,status,category_guess,published_url,answer_summary,created_at,display_id";
+  for (const sel of [full, core]) {
+    const qs = new URLSearchParams({ public_token: `eq.${token}`, select: sel, limit: "1" });
+    const r = await fetch(`${SB_URL}/rest/v1/questions?${qs}`, { headers: sbHeaders() });
+    if (r.ok) {
+      const data = (await r.json()) as Record<string, string>[];
+      return data[0] || null;
+    }
+  }
+  return null;
 }
 
 // ── 공개 API(호출부가 쓰는 것) ──
