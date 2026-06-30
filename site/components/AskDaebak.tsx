@@ -3,6 +3,17 @@ import { useState } from "react";
 import Link from "next/link";
 import LineIcon from "@/components/LineIcon";
 
+// Ask Daebak 예시 칩(클릭 시 질문칸 prefill) — home/ask 공용 단일 소스.
+export const ASK_EXAMPLES = [
+  "Olive Young must-buys",
+  "Would Koreans judge this?",
+  "Can foreigners use Coupang?",
+  "Best Korean sunscreen",
+  "Myeongdong tourist trap?",
+  "Korean convenience store snacks",
+  "WOWPASS vs T-money",
+];
+
 // 로그인 없이 질문 제출 — 검색으로 답이 없을 때 자연스럽게. 제출 후 status 링크(+이메일 안내).
 // 키 미설정/스팸/길이 등은 친절 메시지로. honeypot(website) 로 봇 차단.
 type Result = { statusPath: string; hadEmail: boolean; displayId?: string } | null;
@@ -24,12 +35,14 @@ export default function AskDaebak({
   sourcePage,
   className = "",
   examples = [],
+  showDescription = true,
 }: {
   initialQuestion?: string;
   sourceComponent?: "home_search" | "search_page" | "answer_page" | "category_page" | "ask_page";
   sourcePage?: string;
   className?: string;
   examples?: string[]; // 클릭하면 질문칸에 채워지는 예시
+  showDescription?: boolean; // 홈 히어로는 부제가 따로 있어 false 로 숨김
 }) {
   const [question, setQuestion] = useState(initialQuestion);
   const [email, setEmail] = useState("");
@@ -122,9 +135,17 @@ export default function AskDaebak({
       <label htmlFor="ask-q" className="block text-sm font-semibold text-ink">
         Ask Daebak
       </label>
-      <p className="mt-1 text-sm text-ink-muted">
-        We review real questions to create better Korea guides. No login required.
-      </p>
+      {showDescription ? (
+        <>
+          <p className="mt-1 text-sm text-ink-muted">
+            Ask anything about Korea — useful, weird, or oddly specific.
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+            We answer real questions from foreigners and turn them into simple guides about Korean
+            shopping, beauty, food, apps, travel, and local culture.
+          </p>
+        </>
+      ) : null}
       <textarea
         id="ask-q"
         required
@@ -132,7 +153,7 @@ export default function AskDaebak({
         rows={3}
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
-        placeholder="e.g. What should I buy at Olive Young?"
+        placeholder="e.g. Is Myeongdong a tourist trap?"
         className="mt-3 w-full resize-y rounded-xl border border-line bg-bg px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-soft focus:border-accent"
       />
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import AskDaebak from "@/components/AskDaebak";
+import AskDaebak, { ASK_EXAMPLES } from "@/components/AskDaebak";
 
 export const metadata: Metadata = {
   title: "Ask Daebak",
@@ -24,7 +24,7 @@ export default async function AskPage({
         questions to build better guides — and may answer yours. No login required.
       </p>
       <div className="mt-6">
-        <AskDaebak initialQuestion={q || ""} sourceComponent="ask_page" />
+        <AskDaebak initialQuestion={q || ""} sourceComponent="ask_page" examples={ASK_EXAMPLES} />
       </div>
     </div>
   );

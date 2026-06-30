@@ -4,7 +4,7 @@ import { getAllPosts, getHomeCategories } from "@/lib/posts";
 import type { Post } from "@/lib/posts";
 import CategoryCard from "@/components/CategoryCard";
 import PopularGuides from "@/components/PopularGuides";
-import AskDaebak from "@/components/AskDaebak";
+import AskDaebak, { ASK_EXAMPLES } from "@/components/AskDaebak";
 import SectionBand from "@/components/SectionBand";
 import SmartThumbnail from "@/components/SmartThumbnail";
 import Attribution from "@/components/Attribution";
@@ -49,15 +49,6 @@ const websiteLd = {
   },
 };
 
-// 검색 예시 칩(시드) + 신뢰 한 줄(예시칩과 한 행에 결합).
-const EXAMPLES = [
-  "Olive Young must-buys",
-  "Best Korean sunscreen",
-  "Can foreigners use Coupang?",
-  "WOWPASS vs T-money",
-  "Myeongdong shopping",
-];
-
 // 히어로 우측 여행 비주얼 — admin Image Manager 의 'hero:home' 승인 사진(있으면 hotlink, 없으면 흰 패널 폴백).
 const HERO_VISUAL = {
   slug: "", title: "Seoul skyline and travel", body: "",
@@ -96,7 +87,7 @@ export default function Home() {
             </p>
 
             {/* 홈 히어로 입력 = 질문칸(Ask Daebak). 검색은 헤더 우측에 있음. 예시 칩은 질문칸 prefill. */}
-            <AskDaebak className="mt-6" sourceComponent="home_search" examples={EXAMPLES} />
+            <AskDaebak className="mt-6" sourceComponent="home_search" examples={ASK_EXAMPLES} showDescription={false} />
 
             <p className="mt-3 hidden items-center gap-1.5 text-xs font-medium text-ink-soft sm:flex">
               <LineIcon name="check" className="h-3.5 w-3.5 text-trust" strokeWidth={2.25} />
