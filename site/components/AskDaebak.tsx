@@ -65,7 +65,7 @@ export default function AskDaebak({
           question,
           email: email || undefined,
           name: name || undefined,
-          notifyOnAnswer: Boolean(email),
+          notifyOnAnswer: true,
           website,
           sourceComponent,
           sourcePage: sourcePage || (typeof window !== "undefined" ? window.location.pathname : undefined),
@@ -187,11 +187,12 @@ export default function AskDaebak({
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="ask-email" className="text-xs font-medium text-ink-muted">
-            Email <span className="text-ink-soft">(optional)</span>
+            Email <span className="text-brand">*</span>
           </label>
           <input
             id="ask-email"
             type="email"
+            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
